@@ -1,0 +1,1520 @@
+diff --color -rupN saki4510t/build.gradle hthetiot/build.gradle
+--- saki4510t/build.gradle	2024-10-23 09:12:17.744914632 +0200
++++ hthetiot/build.gradle	2024-10-23 09:32:35.948750890 +0200
+@@ -1,22 +1,20 @@
+ // Top-level build file where you can add configuration options common to all sub-projects/modules.
+ buildscript {
+-    repositories {
+-//		google()
+-		maven { url 'https://maven.google.com' }
+-        jcenter()
+-    }
+-    dependencies {
+-        classpath 'com.android.tools.build:gradle:3.1.4'
+-    }
++	repositories {
++		jcenter()
++		google()
++	}
++	dependencies {
++		classpath 'com.android.tools.build:gradle:7.2.1'
++	}
+ }
+
+ allprojects {
+-    repositories {
+-//    	google()
+-		maven { url 'https://maven.google.com' }
++	repositories {
++		maven { url 'https://raw.github.com/saki4510t/libcommon/master/repository/' }
+ 		jcenter()
+-		maven { url 'http://raw.github.com/saki4510t/libcommon/master/repository/' }
+-    }
++		google()
++	}
+ }
+
+ task clean(type: Delete) {
+@@ -26,9 +24,9 @@ task clean(type: Delete) {
+ ext {
+ 	supportLibVersion = '27.1.1'  // variable that can be referenced to keep support libs consistent
+ 	commonLibVersion= '2.12.4'
+-	versionBuildTool = '27.0.3'
+-	versionCompiler = 27
+-	versionTarget = 27
++	versionCompiler = 34
++	versionTarget = 34
++	minTargetVersion = 30
+ 	versionNameString = '1.0.0'
+ 	javaSourceCompatibility = JavaVersion.VERSION_1_8
+ 	javaTargetCompatibility = JavaVersion.VERSION_1_8
+Binary files saki4510t/gradle/wrapper/gradle-wrapper.jar and hthetiot/gradle/wrapper/gradle-wrapper.jar differ
+diff --color -rupN saki4510t/gradle/wrapper/gradle-wrapper.properties hthetiot/gradle/wrapper/gradle-wrapper.properties
+--- saki4510t/gradle/wrapper/gradle-wrapper.properties	2024-10-23 09:12:17.745146924 +0200
++++ hthetiot/gradle/wrapper/gradle-wrapper.properties	2024-10-23 09:32:35.949526685 +0200
+@@ -1,6 +1,5 @@
+-#Tue Oct 02 16:16:11 JST 2018
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.4.2-bin.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.4-all.zip
+diff --color -rupN saki4510t/gradle.properties hthetiot/gradle.properties
+--- saki4510t/gradle.properties	2024-10-23 09:12:17.744982840 +0200
++++ hthetiot/gradle.properties	2024-10-23 09:32:35.948828432 +0200
+@@ -10,7 +10,7 @@
+ # Specifies the JVM arguments used for the daemon process.
+ # The setting is particularly useful for tweaking memory settings.
+ # Default value: -Xmx10248m -XX:MaxPermSize=256m
+-org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
++org.gradle.jvmargs=-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+ # When configured, Gradle will run in incubating parallel mode.
+ # This option should only be used with decoupled projects. More details, visit
+diff --color -rupN saki4510t/gradlew hthetiot/gradlew
+--- saki4510t/gradlew	2024-10-23 09:12:17.745277757 +0200
++++ hthetiot/gradlew	2024-10-23 09:32:35.949680519 +0200
+@@ -42,11 +42,6 @@ case "`uname`" in
+     ;;
+ esac
+
+-# For Cygwin, ensure paths are in UNIX format before anything is touched.
+-if $cygwin ; then
+-    [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+-fi
+-
+ # Attempt to set APP_HOME
+ # Resolve links: $0 may be a link
+ PRG="$0"
+@@ -61,9 +56,9 @@ while [ -h "$PRG" ] ; do
+     fi
+ done
+ SAVED="`pwd`"
+-cd "`dirname \"$PRG\"`/" >&-
++cd "`dirname \"$PRG\"`/" >/dev/null
+ APP_HOME="`pwd -P`"
+-cd "$SAVED" >&-
++cd "$SAVED" >/dev/null
+
+ CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+
+@@ -114,6 +109,7 @@ fi
+ if $cygwin ; then
+     APP_HOME=`cygpath --path --mixed "$APP_HOME"`
+     CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
++    JAVACMD=`cygpath --unix "$JAVACMD"`
+
+     # We build the pattern for arguments to be converted via cygpath
+     ROOTDIRSRAW=`find -L / -maxdepth 1 -mindepth 1 -type d 2>/dev/null`
+diff --color -rupN saki4510t/libuvccamera/build.gradle hthetiot/libuvccamera/build.gradle
+--- saki4510t/libuvccamera/build.gradle	2024-10-23 09:12:17.745483633 +0200
++++ hthetiot/libuvccamera/build.gradle	2024-10-23 09:32:35.949934354 +0200
+@@ -25,8 +25,7 @@ apply plugin: 'com.android.library'
+ import org.apache.tools.ant.taskdefs.condition.Os
+
+ android {
+-	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
++	compileSdk versionCompiler
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+ 	}
+
+     defaultConfig {
+-        minSdkVersion 14
++		minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+     }
+
+@@ -58,13 +57,16 @@ tasks.withType(JavaCompile) {
+
+ String getNdkBuildPath() {
+ 	Properties properties = new Properties()
+-	properties.load(project.rootProject.file('local.properties').newDataInputStream())
+-	def ndkBuildingDir = properties.getProperty("ndk.dir")
+-	def ndkBuildPath = ndkBuildingDir
++	def ndkBuildPath = "";
++	def ndkBuildingDir = "";
++	if (project.rootProject.file("local.properties").exists()) {
++		properties.load(project.rootProject.file('local.properties').newDataInputStream())
++		ndkBuildingDir = properties.getProperty("ndk.dir") + '/'
++	}
+ 	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+-		ndkBuildPath = ndkBuildingDir + '/ndk-build.cmd'
++		ndkBuildPath = ndkBuildingDir + 'ndk-build.cmd'
+ 	} else {
+-		ndkBuildPath = ndkBuildingDir + '/ndk-build'
++		ndkBuildPath = ndkBuildingDir + 'ndk-build'
+ 	}
+ 	return ndkBuildPath
+ }
+@@ -86,7 +88,6 @@ clean.dependsOn 'ndkClean'
+ dependencies {
+     implementation fileTree(dir: new File(buildDir, 'libs'), include: '*.jar')
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/libuvccamera/src/main/AndroidManifest.xml hthetiot/libuvccamera/src/main/AndroidManifest.xml
+--- saki4510t/libuvccamera/src/main/AndroidManifest.xml	2024-10-23 09:12:17.745675341 +0200
++++ hthetiot/libuvccamera/src/main/AndroidManifest.xml	2024-10-23 09:32:35.950143438 +0200
+@@ -26,8 +26,4 @@
+     android:versionCode="2"
+     android:versionName="1.1" >
+
+-    <uses-sdk
+-        android:minSdkVersion="14"
+-        android:targetSdkVersion="22" />
+-
+ </manifest>
+diff --color -rupN saki4510t/libuvccamera/src/main/java/com/serenegiant/common/BaseActivity.java hthetiot/libuvccamera/src/main/java/com/serenegiant/common/BaseActivity.java
+--- saki4510t/libuvccamera/src/main/java/com/serenegiant/common/BaseActivity.java	2024-10-23 09:12:17.745966592 +0200
++++ hthetiot/libuvccamera/src/main/java/com/serenegiant/common/BaseActivity.java	2024-10-23 09:32:35.950574940 +0200
+@@ -26,15 +26,18 @@ package com.serenegiant.common;
+ import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.content.pm.PackageManager;
++import android.os.Build;
+ import android.os.Bundle;
++import android.os.Environment;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.support.annotation.NonNull;
+ import android.support.annotation.StringRes;
+-import android.support.v7.app.AppCompatActivity;
++import android.app.Activity;
+ import android.util.Log;
+ import android.widget.Toast;
+
++import com.serenegiant.dialog.MessageDialogFragment;
+ import com.serenegiant.dialog.MessageDialogFragmentV4;
+ import com.serenegiant.utils.BuildCheck;
+ import com.serenegiant.utils.HandlerThreadHandler;
+@@ -44,7 +47,7 @@ import com.serenegiant.utils.PermissionC
+  * Created by saki on 2016/11/18.
+  *
+  */
+-public class BaseActivity extends AppCompatActivity
++public class BaseActivity extends Activity
+ 	implements MessageDialogFragmentV4.MessageDialogListener {
+
+ 	private static boolean DEBUG = false;	// FIXME 実働時はfalseにセットすること
+@@ -277,11 +280,15 @@ public class BaseActivity extends AppCom
+ 	 * @return true 外部ストレージへの書き込みパーミッションが有る
+ 	 */
+ 	protected boolean checkPermissionWriteExternalStorage() {
+-		if (!PermissionCheck.hasWriteExternalStorage(this)) {
+-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
+-				R.string.permission_title, R.string.permission_ext_storage_request,
+-				new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
+-			return false;
++		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
++			return Environment.isExternalStorageManager() || Environment.isExternalStorageEmulated();
++		} else {
++			if (!PermissionCheck.hasWriteExternalStorage(this)) {
++				MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
++						R.string.permission_title, R.string.permission_ext_storage_request,
++						new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
++				return false;
++			}
+ 		}
+ 		return true;
+ 	}
+@@ -293,7 +300,7 @@ public class BaseActivity extends AppCom
+ 	 */
+ 	protected boolean checkPermissionAudio() {
+ 		if (!PermissionCheck.hasAudio(this)) {
+-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
++			MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
+ 				R.string.permission_title, R.string.permission_audio_recording_request,
+ 				new String[]{Manifest.permission.RECORD_AUDIO});
+ 			return false;
+@@ -308,7 +315,7 @@ public class BaseActivity extends AppCom
+ 	 */
+ 	protected boolean checkPermissionNetwork() {
+ 		if (!PermissionCheck.hasNetwork(this)) {
+-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_NETWORK,
++			MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_NETWORK,
+ 				R.string.permission_title, R.string.permission_network_request,
+ 				new String[]{Manifest.permission.INTERNET});
+ 			return false;
+@@ -323,7 +330,7 @@ public class BaseActivity extends AppCom
+ 	 */
+ 	protected boolean checkPermissionCamera() {
+ 		if (!PermissionCheck.hasCamera(this)) {
+-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_CAMERA,
++			MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_CAMERA,
+ 				R.string.permission_title, R.string.permission_camera_request,
+ 				new String[]{Manifest.permission.CAMERA});
+ 			return false;
+diff --color -rupN saki4510t/libuvccamera/src/main/java/com/serenegiant/common/BaseFragment.java hthetiot/libuvccamera/src/main/java/com/serenegiant/common/BaseFragment.java
+--- saki4510t/libuvccamera/src/main/java/com/serenegiant/common/BaseFragment.java	2024-10-23 09:12:17.746076217 +0200
++++ hthetiot/libuvccamera/src/main/java/com/serenegiant/common/BaseFragment.java	2024-10-23 09:32:35.950734982 +0200
+@@ -27,7 +27,9 @@ import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.app.Fragment;
+ import android.content.pm.PackageManager;
++import android.os.Build;
+ import android.os.Bundle;
++import android.os.Environment;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.support.annotation.NonNull;
+@@ -285,11 +287,15 @@ public class BaseFragment extends Fragme
+ 	 * @return true 外部ストレージへの書き込みパーミッションが有る
+ 	 */
+ 	protected boolean checkPermissionWriteExternalStorage() {
+-		if (!PermissionCheck.hasWriteExternalStorage(getActivity())) {
+-			MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
+-				com.serenegiant.common.R.string.permission_title, com.serenegiant.common.R.string.permission_ext_storage_request,
+-				new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
+-			return false;
++		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S_V2) {
++			return Environment.isExternalStorageManager() || Environment.isExternalStorageEmulated();
++		} else {
++			if (!PermissionCheck.hasWriteExternalStorage(getActivity())) {
++				MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
++						R.string.permission_title, R.string.permission_ext_storage_request,
++						new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
++				return false;
++			}
+ 		}
+ 		return true;
+ 	}
+diff --color -rupN saki4510t/libuvccamera/src/main/java/com/serenegiant/usb/USBMonitor.java hthetiot/libuvccamera/src/main/java/com/serenegiant/usb/USBMonitor.java
+--- saki4510t/libuvccamera/src/main/java/com/serenegiant/usb/USBMonitor.java	2024-10-23 09:12:17.747003885 +0200
++++ hthetiot/libuvccamera/src/main/java/com/serenegiant/usb/USBMonitor.java	2024-10-23 09:32:35.951848113 +0200
+@@ -43,6 +43,7 @@ import android.hardware.usb.UsbDevice;
+ import android.hardware.usb.UsbDeviceConnection;
+ import android.hardware.usb.UsbInterface;
+ import android.hardware.usb.UsbManager;
++import android.os.Build;
+ import android.os.Handler;
+ import android.text.TextUtils;
+ import android.util.Log;
+@@ -167,11 +168,21 @@ public final class USBMonitor {
+ 			if (DEBUG) Log.i(TAG, "register:");
+ 			final Context context = mWeakContext.get();
+ 			if (context != null) {
+-				mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
++				mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
+ 				final IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+ 				// ACTION_USB_DEVICE_ATTACHED never comes on some devices so it should not be added here
+ 				filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+-				context.registerReceiver(mUsbReceiver, filter);
++
++				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
++					// For Android 13 (API level 33) and above, use receiver flags
++					context.registerReceiver(mUsbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
++				} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
++					// For Android 12 (API level 31) and above
++					context.registerReceiver(mUsbReceiver, filter);
++				} else {
++					// For older versions of Android
++					context.registerReceiver(mUsbReceiver, filter);
++				}
+ 			}
+ 			// start connection check
+ 			mDeviceCounts = 0;
+@@ -660,7 +671,11 @@ public final class USBMonitor {
+ 		if (useNewAPI && BuildCheck.isAndroid5()) {
+ 			sb.append("#");
+ 			if (TextUtils.isEmpty(serial)) {
+-				sb.append(device.getSerialNumber());	sb.append("#");	// API >= 21
++				try {
++					sb.append(device.getSerialNumber());
++					sb.append("#");
++				} // API >= 21 & targetSdkVersion has to be <= 28
++				catch(SecurityException ignore) {}
+ 			}
+ 			sb.append(device.getManufacturerName());	sb.append("#");	// API >= 21
+ 			sb.append(device.getConfigurationCount());	sb.append("#");	// API >= 21
+diff --color -rupN saki4510t/libuvccamera/src/main/jni/Application.mk hthetiot/libuvccamera/src/main/jni/Application.mk
+--- saki4510t/libuvccamera/src/main/jni/Application.mk	2024-10-23 09:12:17.747877220 +0200
++++ hthetiot/libuvccamera/src/main/jni/Application.mk	2024-10-23 09:32:35.952559783 +0200
+@@ -26,7 +26,7 @@
+ # Note: Supporting GCC on NDK is already deprecated and GCC will be removed from NDK soon.
+ #NDK_TOOLCHAIN_VERSION := 4.9
+
+-APP_PLATFORM := android-14
+-APP_ABI := armeabi armeabi-v7a x86 mips
++APP_PLATFORM := android-21
++APP_ABI := armeabi-v7a arm64-v8a
+ #APP_OPTIM := debug
+ APP_OPTIM := release
+diff --color -rupN saki4510t/libuvccamera/src/main/jni/UVCCamera/UVCPreview.cpp hthetiot/libuvccamera/src/main/jni/UVCCamera/UVCPreview.cpp
+--- saki4510t/libuvccamera/src/main/jni/UVCCamera/UVCPreview.cpp	2024-10-23 09:12:17.749309889 +0200
++++ hthetiot/libuvccamera/src/main/jni/UVCCamera/UVCPreview.cpp	2024-10-23 09:32:35.953645496 +0200
+@@ -845,7 +845,7 @@ void UVCPreview::do_capture_surface(JNIE
+  */
+ void UVCPreview::do_capture_callback(JNIEnv *env, uvc_frame_t *frame) {
+ 	ENTER();
+-
++	pthread_mutex_lock(&capture_mutex);
+ 	if (LIKELY(frame)) {
+ 		uvc_frame_t *callback_frame = frame;
+ 		if (mFrameCallbackObj) {
+@@ -872,5 +872,6 @@ void UVCPreview::do_capture_callback(JNI
+  SKIP:
+ 		recycle_frame(callback_frame);
+ 	}
++	pthread_mutex_unlock(&capture_mutex);
+ 	EXIT();
+ }
+diff --color -rupN saki4510t/libuvccamera/src/main/jni/libusb/libusb/os/android_usbfs.c hthetiot/libuvccamera/src/main/jni/libusb/libusb/os/android_usbfs.c
+--- saki4510t/libuvccamera/src/main/jni/libusb/libusb/os/android_usbfs.c	2024-10-23 09:12:17.833689980 +0200
++++ hthetiot/libuvccamera/src/main/jni/libusb/libusb/os/android_usbfs.c	2024-10-23 09:32:36.066680576 +0200
+@@ -1311,10 +1311,10 @@ static int android_initialize_device(str
+ 	priv->descriptors_len = 0;
+ 	priv->fd = 0;
+ 	memset(desc, 0, sizeof(desc));
+-    if (!lseek(fd, 0, SEEK_SET)) {
+-        // ディスクリプタを読み込んでローカルキャッシュする
+-        int length = read(fd, desc, sizeof(desc));
+-        LOGD("Device::init read returned %d errno %d\n", length, errno);
++	if (!lseek(fd, 0, SEEK_SET)) {
++		// ディスクリプタを読み込んでローカルキャッシュする
++		int length = read(fd, desc, sizeof(desc));
++		LOGD("Device::init read returned %d errno %d\n", length, errno);
+ 		if (length > 0) {
+ 			priv->fd = fd;
+ 			priv->descriptors = usbi_reallocf(priv->descriptors, length);
+@@ -1383,36 +1383,36 @@ int android_generate_device(struct libus
+ 	int r = 0;
+
+ 	*dev = NULL;
+- 	/* FIXME: session ID is not guaranteed unique as addresses can wrap and
+- 	 * will be reused. instead we should add a simple sysfs attribute with
+- 	 * a session ID. */
++	/* FIXME: session ID is not guaranteed unique as addresses can wrap and
++	 * will be reused. instead we should add a simple sysfs attribute with
++	 * a session ID. */
+ 	session_id = busnum << 8 | devaddr;
+- 	LOGD("allocating new device for %d/%d (session %ld)", busnum, devaddr, session_id);
+- 	*dev = usbi_alloc_device(ctx, session_id);	// この時点で参照カウンタ=1
+- 	if (UNLIKELY(!dev)) {
+- 		RETURN(LIBUSB_ERROR_NO_MEM, int);
+- 	}
+-
+- 	r = android_initialize_device(*dev, busnum, devaddr, fd);
+- 	if (UNLIKELY(r < 0)) {
+- 		LOGE("initialize_device failed: ret=%d", r);
+- 		goto out;
+- 	}
+- 	r = usbi_sanitize_device(*dev);
+- 	if (UNLIKELY(r < 0)) {
+- 		LOGE("usbi_sanitize_device failed: ret=%d", r);
+- 		goto out;
+- 	}
++	LOGD("allocating new device for %d/%d (session %ld)", busnum, devaddr, session_id);
++	*dev = usbi_alloc_device(ctx, session_id);	// この時点で参照カウンタ=1
++	if (UNLIKELY(!dev)) {
++		RETURN(LIBUSB_ERROR_NO_MEM, int);
++	}
++
++	r = android_initialize_device(*dev, busnum, devaddr, fd);
++	if (UNLIKELY(r < 0)) {
++		LOGE("initialize_device failed: ret=%d", r);
++		goto out;
++	}
++	r = usbi_sanitize_device(*dev);
++	if (UNLIKELY(r < 0)) {
++		LOGE("usbi_sanitize_device failed: ret=%d", r);
++		goto out;
++	}
+
+ out:
+- 	if (UNLIKELY(r < 0)) {
+- 		libusb_unref_device(*dev);	// ここで参照カウンタが0になって破棄される
+- 		*dev = NULL;
+- 	} else {
+- 		usbi_connect_device(*dev);
+- 	}
++	if (UNLIKELY(r < 0)) {
++		libusb_unref_device(*dev);	// ここで参照カウンタが0になって破棄される
++		*dev = NULL;
++	} else {
++		usbi_connect_device(*dev);
++	}
+
+- 	RETURN(r, int);
++	RETURN(r, int);
+ }
+
+
+@@ -2726,6 +2726,9 @@ static int handle_iso_completion(struct
+
+ 	usbi_mutex_lock(&itransfer->lock);
+ 	for (i = 0; i < num_urbs; i++) {
++		if(tpriv->iso_urbs == NULL){
++			return LIBUSB_TRANSFER_ERROR;
++		}
+ 		if (urb == tpriv->iso_urbs[i]) {
+ 			urb_idx = i + 1;
+ 			break;
+@@ -2926,7 +2929,13 @@ static int reap_for_handle(struct libusb
+
+ 	usbi_dbg("urb type=%d status=%d transferred=%d",
+ 		urb->type, urb->status, urb->actual_length);
+-
++
++	// if not check status, will crash when target > 27
++	// current error status is -108
++	if(urb->status == -108){
++		return LIBUSB_ERROR_OTHER;
++	}
++
+ 	switch (transfer->type) {
+ 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
+ 		return handle_iso_completion(handle, itransfer, urb);
+diff --color -rupN saki4510t/usbCameraCommon/build.gradle hthetiot/usbCameraCommon/build.gradle
+--- saki4510t/usbCameraCommon/build.gradle	2024-10-23 09:12:17.873693793 +0200
++++ hthetiot/usbCameraCommon/build.gradle	2024-10-23 09:32:36.149767972 +0200
+@@ -24,8 +24,7 @@
+ apply plugin: 'com.android.library'
+
+ android {
+-    compileSdkVersion versionCompiler
+-   	buildToolsVersion versionBuildTool
++    compileSdk versionCompiler
+
+    	compileOptions {
+    		sourceCompatibility javaSourceCompatibility
+@@ -33,7 +32,7 @@ android {
+    	}
+
+     defaultConfig {
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+         targetSdkVersion versionTarget
+
+     }
+@@ -48,7 +47,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraCommon/src/main/AndroidManifest.xml hthetiot/usbCameraCommon/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraCommon/src/main/AndroidManifest.xml	2024-10-23 09:12:17.873991543 +0200
++++ hthetiot/usbCameraCommon/src/main/AndroidManifest.xml	2024-10-23 09:32:36.150377767 +0200
+@@ -21,4 +21,5 @@
+   ~  may have a different license, see the respective files.
+   -->
+
+-<manifest package="com.serenegiant.usbcameracommon"/>
++<manifest package="com.serenegiant.usbcameracommon">
++</manifest>
+diff --color -rupN saki4510t/usbCameraCommon/src/main/java/com/serenegiant/encoder/MediaAudioEncoder.java hthetiot/usbCameraCommon/src/main/java/com/serenegiant/encoder/MediaAudioEncoder.java
+--- saki4510t/usbCameraCommon/src/main/java/com/serenegiant/encoder/MediaAudioEncoder.java	2024-10-23 09:12:17.874809002 +0200
++++ hthetiot/usbCameraCommon/src/main/java/com/serenegiant/encoder/MediaAudioEncoder.java	2024-10-23 09:32:36.151583564 +0200
+@@ -27,6 +27,7 @@ import java.io.IOException;
+ import java.nio.ByteBuffer;
+ import java.nio.ByteOrder;
+
++import android.annotation.SuppressLint;
+ import android.media.AudioFormat;
+ import android.media.AudioRecord;
+ import android.media.MediaCodec;
+@@ -37,16 +38,16 @@ import android.media.MediaRecorder;
+ import android.util.Log;
+
+ public class MediaAudioEncoder extends MediaEncoder implements IAudioEncoder {
+-	private static final boolean DEBUG = true;	// TODO set false on release
++	private static final boolean DEBUG = true;  // TODO set false on release
+ 	private static final String TAG = "MediaAudioEncoder";
+
+ 	private static final String MIME_TYPE = "audio/mp4a-latm";
+-    private static final int SAMPLE_RATE = 44100;	// 44.1[KHz] is only setting guaranteed to be available on all devices.
+-    private static final int BIT_RATE = 64000;
+-	public static final int SAMPLES_PER_FRAME = 1024;	// AAC, bytes/frame/channel
+-	public static final int FRAMES_PER_BUFFER = 25; 	// AAC, frame/buffer/sec
++	private static final int SAMPLE_RATE = 44100;   // 44.1[KHz] is only setting guaranteed to be available on all devices.
++	private static final int BIT_RATE = 64000;
++	public static final int SAMPLES_PER_FRAME = 1024;   // AAC, bytes/frame/channel
++	public static final int FRAMES_PER_BUFFER = 25;     // AAC, frame/buffer/sec
+
+-    private AudioThread mAudioThread = null;
++	private AudioThread mAudioThread = null;
+
+ 	public MediaAudioEncoder(final MediaMuxerWrapper muxer, final MediaEncoderListener listener) {
+ 		super(muxer, listener);
+@@ -55,52 +56,52 @@ public class MediaAudioEncoder extends M
+ 	@Override
+ 	protected void prepare() throws IOException {
+ 		if (DEBUG) Log.v(TAG, "prepare:");
+-        mTrackIndex = -1;
+-        mMuxerStarted = mIsEOS = false;
+-        // prepare MediaCodec for AAC encoding of audio data from inernal mic.
+-        final MediaCodecInfo audioCodecInfo = selectAudioCodec(MIME_TYPE);
+-        if (audioCodecInfo == null) {
+-            Log.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
+-            return;
+-        }
++		mTrackIndex = -1;
++		mMuxerStarted = mIsEOS = false;
++		// prepare MediaCodec for AAC encoding of audio data from inernal mic.
++		final MediaCodecInfo audioCodecInfo = selectAudioCodec(MIME_TYPE);
++		if (audioCodecInfo == null) {
++			Log.e(TAG, "Unable to find an appropriate codec for " + MIME_TYPE);
++			return;
++		}
+ 		if (DEBUG) Log.i(TAG, "selected codec: " + audioCodecInfo.getName());
+
+-        final MediaFormat audioFormat = MediaFormat.createAudioFormat(MIME_TYPE, SAMPLE_RATE, 1);
++		final MediaFormat audioFormat = MediaFormat.createAudioFormat(MIME_TYPE, SAMPLE_RATE, 1);
+ 		audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+ 		audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_MONO);
+ 		audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
+ 		audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
+-//		audioFormat.setLong(MediaFormat.KEY_MAX_INPUT_SIZE, inputFile.length());
++//      audioFormat.setLong(MediaFormat.KEY_MAX_INPUT_SIZE, inputFile.length());
+ //      audioFormat.setLong(MediaFormat.KEY_DURATION, (long)durationInMs );
+ 		if (DEBUG) Log.i(TAG, "format: " + audioFormat);
+-        mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
+-        mMediaCodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+-        mMediaCodec.start();
+-        if (DEBUG) Log.i(TAG, "prepare finishing");
+-        if (mListener != null) {
+-        	try {
+-        		mListener.onPrepared(this);
+-        	} catch (final Exception e) {
+-        		Log.e(TAG, "prepare:", e);
+-        	}
+-        }
++		mMediaCodec = MediaCodec.createEncoderByType(MIME_TYPE);
++		mMediaCodec.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
++		mMediaCodec.start();
++		if (DEBUG) Log.i(TAG, "prepare finishing");
++		if (mListener != null) {
++			try {
++				mListener.onPrepared(this);
++			} catch (final Exception e) {
++				Log.e(TAG, "prepare:", e);
++			}
++		}
+ 	}
+
+-    @Override
++	@Override
+ 	protected void startRecording() {
+ 		super.startRecording();
+ 		// create and execute audio capturing thread using internal mic
+ 		if (mAudioThread == null) {
+-	        mAudioThread = new AudioThread();
++			mAudioThread = new AudioThread();
+ 			mAudioThread.start();
+ 		}
+ 	}
+
+ 	@Override
+-    protected void release() {
++	protected void release() {
+ 		mAudioThread = null;
+ 		super.release();
+-    }
++	}
+
+ 	private static final int[] AUDIO_SOURCES = new int[] {
+ 		MediaRecorder.AudioSource.DEFAULT,
+@@ -112,9 +113,10 @@ public class MediaAudioEncoder extends M
+ 	 * Thread to capture audio data from internal mic as uncompressed 16bit PCM data
+ 	 * and write them to the MediaCodec encoder
+ 	 */
+-    private class AudioThread extends Thread {
+-    	@Override
+-    	public void run() {
++	private class AudioThread extends Thread {
++		@Override
++		@SuppressLint("MissingPermission")
++		public void run() {
+ 			android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO); // THREAD_PRIORITY_URGENT_AUDIO
+ 			int cnt = 0;
+ 			final int min_buffer_size = AudioRecord.getMinBufferSize(
+@@ -132,7 +134,7 @@ public class MediaAudioEncoder extends M
+ 						if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+ 							audioRecord.release();
+ 							audioRecord = null;
+-         				}
++						}
+ 					}
+ 				} catch (final Exception e) {
+ 					audioRecord = null;
+@@ -197,37 +199,37 @@ public class MediaAudioEncoder extends M
+ 				}
+ 			}
+ 			if (DEBUG) Log.v(TAG, "AudioThread:finished");
+-    	}
+-    }
++		}
++	}
+
+-    /**
+-     * select the first codec that match a specific MIME type
+-     * @param mimeType
+-     * @return
+-     */
+-    private static final MediaCodecInfo selectAudioCodec(final String mimeType) {
+-    	if (DEBUG) Log.v(TAG, "selectAudioCodec:");
+-
+-    	MediaCodecInfo result = null;
+-    	// get the list of available codecs
+-        final int numCodecs = MediaCodecList.getCodecCount();
+-LOOP:	for (int i = 0; i < numCodecs; i++) {
+-        	final MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
+-            if (!codecInfo.isEncoder()) {	// skipp decoder
+-                continue;
+-            }
+-            final String[] types = codecInfo.getSupportedTypes();
+-            for (int j = 0; j < types.length; j++) {
+-            	if (DEBUG) Log.i(TAG, "supportedType:" + codecInfo.getName() + ",MIME=" + types[j]);
+-                if (types[j].equalsIgnoreCase(mimeType)) {
+-                	if (result == null) {
+-                		result = codecInfo;
+-               			break LOOP;
+-                	}
+-                }
+-            }
+-        }
+-   		return result;
+-    }
++	/**
++	 * select the first codec that match a specific MIME type
++	 * @param mimeType
++	 * @return
++	 */
++	private static final MediaCodecInfo selectAudioCodec(final String mimeType) {
++		if (DEBUG) Log.v(TAG, "selectAudioCodec:");
++
++		MediaCodecInfo result = null;
++		// get the list of available codecs
++		final int numCodecs = MediaCodecList.getCodecCount();
++LOOP:   for (int i = 0; i < numCodecs; i++) {
++			final MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
++			if (!codecInfo.isEncoder()) {   // skipp decoder
++				continue;
++			}
++			final String[] types = codecInfo.getSupportedTypes();
++			for (int j = 0; j < types.length; j++) {
++				if (DEBUG) Log.i(TAG, "supportedType:" + codecInfo.getName() + ",MIME=" + types[j]);
++				if (types[j].equalsIgnoreCase(mimeType)) {
++					if (result == null) {
++						result = codecInfo;
++						break LOOP;
++					}
++				}
++			}
++		}
++		return result;
++	}
+
+ }
+diff --color -rupN saki4510t/usbCameraCommon/src/main/java/com/serenegiant/usbcameracommon/AbstractUVCCameraHandler.java hthetiot/usbCameraCommon/src/main/java/com/serenegiant/usbcameracommon/AbstractUVCCameraHandler.java
+--- saki4510t/usbCameraCommon/src/main/java/com/serenegiant/usbcameracommon/AbstractUVCCameraHandler.java	2024-10-23 09:12:17.875709921 +0200
++++ hthetiot/usbCameraCommon/src/main/java/com/serenegiant/usbcameracommon/AbstractUVCCameraHandler.java	2024-10-23 09:32:36.154249285 +0200
+@@ -23,6 +23,7 @@
+
+ package com.serenegiant.usbcameracommon;
+
++import android.annotation.SuppressLint;
+ import android.app.Activity;
+ import android.content.Context;
+ import android.graphics.Bitmap;
+@@ -31,6 +32,7 @@ import android.hardware.usb.UsbDevice;
+ import android.media.AudioManager;
+ import android.media.MediaScannerConnection;
+ import android.media.SoundPool;
++import android.os.Build;
+ import android.os.Environment;
+ import android.os.Handler;
+ import android.os.Looper;
+@@ -65,7 +67,7 @@ import java.util.Set;
+ import java.util.concurrent.CopyOnWriteArraySet;
+
+ abstract class AbstractUVCCameraHandler extends Handler {
+-	private static final boolean DEBUG = true;	// TODO set false on release
++	private static final boolean DEBUG = true;  // TODO set false on release
+ 	private static final String TAG = "AbsUVCCameraHandler";
+
+ 	public interface CameraCallback {
+@@ -515,7 +517,7 @@ abstract class AbstractUVCCameraHandler
+ 			if (DEBUG) Log.v(TAG_THREAD, "handleCaptureStill:");
+ 			final Activity parent = mWeakParent.get();
+ 			if (parent == null) return;
+-			mSoundPool.play(mSoundId, 0.2f, 0.2f, 0, 0, 1.0f);	// play shutter sound
++			mSoundPool.play(mSoundId, 0.2f, 0.2f, 0, 0, 1.0f);  // play shutter sound
+ 			try {
+ 				final Bitmap bitmap = mWeakCameraView.get().captureStillImage();
+ 				// get buffered output stream for saving a captured still image as a file on external storage.
+@@ -544,16 +546,16 @@ abstract class AbstractUVCCameraHandler
+ 			if (DEBUG) Log.v(TAG_THREAD, "handleStartRecording:");
+ 			try {
+ 				if ((mUVCCamera == null) || (mMuxer != null)) return;
+-				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
++				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(".mp4");  // if you record audio only, ".m4a" is also OK.
+ 				MediaVideoBufferEncoder videoEncoder = null;
+ 				switch (mEncoderType) {
+-				case 1:	// for video capturing using MediaVideoEncoder
++				case 1: // for video capturing using MediaVideoEncoder
+ 					new MediaVideoEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
+ 					break;
+-				case 2:	// for video capturing using MediaVideoBufferEncoder
++				case 2: // for video capturing using MediaVideoBufferEncoder
+ 					videoEncoder = new MediaVideoBufferEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
+ 					break;
+-				// case 0:	// for video capturing using MediaSurfaceEncoder
++				// case 0:  // for video capturing using MediaSurfaceEncoder
+ 				default:
+ 					new MediaSurfaceEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
+ 					break;
+@@ -700,27 +702,37 @@ abstract class AbstractUVCCameraHandler
+ 		/**
+ 		 * prepare and load shutter sound for still image capturing
+ 		 */
+-		@SuppressWarnings("deprecation")
+-		private void loadShutterSound(final Context context) {
+-	    	// get system stream type using reflection
+-	        int streamType;
+-	        try {
+-	            final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
+-	            final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
+-	            streamType = sseField.getInt(null);
+-	        } catch (final Exception e) {
+-	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
+-	        }
+-	        if (mSoundPool != null) {
+-	        	try {
+-	        		mSoundPool.release();
+-	        	} catch (final Exception e) {
+-	        	}
+-	        	mSoundPool = null;
+-	        }
+-	        // load shutter sound from resource
+-		    mSoundPool = new SoundPool(2, streamType, 0);
+-		    mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
++		@SuppressLint("SoonBlockedPrivateApi")
++		protected void loadShutterSound(final Context context) {
++			// Define a default stream type
++			int streamType = AudioManager.STREAM_SYSTEM;
++
++			// Conditionally handle reflection based on the Android version
++			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {  // API 32 is Android 12L
++				try {
++					// Use reflection only for older versions
++					final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
++					final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
++					streamType = sseField.getInt(null);
++				} catch (final Exception e) {
++					// If reflection fails, fall back to STREAM_SYSTEM
++					streamType = AudioManager.STREAM_SYSTEM;
++				}
++			}
++
++			// Clean up existing SoundPool instance if necessary
++			if (mSoundPool != null) {
++				try {
++					mSoundPool.release();
++				} catch (final Exception e) {
++					// Handle the exception (optional)
++				}
++				mSoundPool = null;
++			}
++
++			// Initialize the SoundPool and load the shutter sound
++			mSoundPool = new SoundPool(2, streamType, 0);
++			mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
+ 		}
+
+ 		@Override
+diff --color -rupN saki4510t/usbCameraTest/build.gradle hthetiot/usbCameraTest/build.gradle
+--- saki4510t/usbCameraTest/build.gradle	2024-10-23 09:12:17.877329673 +0200
++++ hthetiot/usbCameraTest/build.gradle	2024-10-23 09:32:36.158103178 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest"
+-        minSdkVersion 14
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest/src/main/AndroidManifest.xml hthetiot/usbCameraTest/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest/src/main/AndroidManifest.xml	2024-10-23 09:12:17.877666424 +0200
++++ hthetiot/usbCameraTest/src/main/AndroidManifest.xml	2024-10-23 09:32:36.161270110 +0200
+@@ -31,7 +31,8 @@
+         android:theme="@style/AppTheme" >
+         <activity
+             android:name="com.serenegiant.usbcameratest.MainActivity"
+-            android:label="@string/app_name" >
++            android:label="@string/app_name"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest/src/main/res/layout/activity_main.xml hthetiot/usbCameraTest/src/main/res/layout/activity_main.xml
+--- saki4510t/usbCameraTest/src/main/res/layout/activity_main.xml	2024-10-23 09:12:17.878708884 +0200
++++ hthetiot/usbCameraTest/src/main/res/layout/activity_main.xml	2024-10-23 09:32:36.162709950 +0200
+@@ -34,7 +34,7 @@
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:layout_gravity="center"
+-        android:background="#ff000000" />
++        android:background="@null" />
+
+     <ImageButton
+         android:id="@+id/camera_button"
+diff --color -rupN saki4510t/usbCameraTest/src/main/res/values/dimens.xml hthetiot/usbCameraTest/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest/src/main/res/values/dimens.xml	2024-10-23 09:12:17.879685344 +0200
++++ hthetiot/usbCameraTest/src/main/res/values/dimens.xml	2024-10-23 09:32:36.163570996 +0200
+@@ -23,6 +23,7 @@
+   -->
+ <resources>
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest0/build.gradle hthetiot/usbCameraTest0/build.gradle
+--- saki4510t/usbCameraTest0/build.gradle	2024-10-23 09:12:17.880384678 +0200
++++ hthetiot/usbCameraTest0/build.gradle	2024-10-23 09:32:36.164063957 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest0"
+-        minSdkVersion 14
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest0/src/main/AndroidManifest.xml hthetiot/usbCameraTest0/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest0/src/main/AndroidManifest.xml	2024-10-23 09:12:17.880865596 +0200
++++ hthetiot/usbCameraTest0/src/main/AndroidManifest.xml	2024-10-23 09:32:36.164703293 +0200
+@@ -31,7 +31,8 @@
+         android:theme="@style/AppTheme" >
+         <activity
+             android:name="com.serenegiant.usbcameratest0.MainActivity"
+-            android:label="@string/app_name" >
++            android:label="@string/app_name"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest0/src/main/res/values/dimens.xml hthetiot/usbCameraTest0/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest0/src/main/res/values/dimens.xml	2024-10-23 09:12:17.883093432 +0200
++++ hthetiot/usbCameraTest0/src/main/res/values/dimens.xml	2024-10-23 09:32:36.167101180 +0200
+@@ -23,6 +23,7 @@
+   -->
+ <resources>
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest2/build.gradle hthetiot/usbCameraTest2/build.gradle
+--- saki4510t/usbCameraTest2/build.gradle	2024-10-23 09:12:17.883568641 +0200
++++ hthetiot/usbCameraTest2/build.gradle	2024-10-23 09:32:36.167925809 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest2"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest2/src/main/AndroidManifest.xml hthetiot/usbCameraTest2/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest2/src/main/AndroidManifest.xml	2024-10-23 09:12:17.884088101 +0200
++++ hthetiot/usbCameraTest2/src/main/AndroidManifest.xml	2024-10-23 09:32:36.168414186 +0200
+@@ -33,7 +33,8 @@
+         android:theme="@style/AppTheme" >
+         <activity
+             android:name="com.serenegiant.usbcameratest2.MainActivity"
+-            android:label="@string/app_name" >
++            android:label="@string/app_name"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest2/src/main/res/layout/activity_main.xml hthetiot/usbCameraTest2/src/main/res/layout/activity_main.xml
+--- saki4510t/usbCameraTest2/src/main/res/layout/activity_main.xml	2024-10-23 09:12:17.885825978 +0200
++++ hthetiot/usbCameraTest2/src/main/res/layout/activity_main.xml	2024-10-23 09:32:36.169991360 +0200
+@@ -27,7 +27,7 @@
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     android:background="#ff000000"
+-    tools:context="com.serenegiant.usbcameratest.MainActivity"
++    tools:context="com.serenegiant.usbcameratest2.MainActivity"
+     tools:ignore="MergeRootFrame" >
+
+     <com.serenegiant.widget.SimpleUVCCameraTextureView
+@@ -36,7 +36,7 @@
+         android:layout_height="match_parent"
+         android:layout_centerInParent="true"
+         android:layout_gravity="center"
+-        android:background="#ff000000" />
++			  android:background="@null" />
+
+     <ImageView
+         android:id="@+id/imageView1"
+@@ -47,7 +47,7 @@
+         android:layout_alignLeft="@+id/UVCCameraTextureView1"
+         android:layout_alignRight="@+id/UVCCameraTextureView1"
+         android:src="@drawable/border" />
+-
++
+     <ImageButton
+         android:id="@+id/capture_button"
+         android:layout_width="wrap_content"
+diff --color -rupN saki4510t/usbCameraTest2/src/main/res/values/dimens.xml hthetiot/usbCameraTest2/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest2/src/main/res/values/dimens.xml	2024-10-23 09:12:17.886661354 +0200
++++ hthetiot/usbCameraTest2/src/main/res/values/dimens.xml	2024-10-23 09:32:36.170725322 +0200
+@@ -24,6 +24,7 @@
+ <resources>
+
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest3/build.gradle hthetiot/usbCameraTest3/build.gradle
+--- saki4510t/usbCameraTest3/build.gradle	2024-10-23 09:12:17.887101730 +0200
++++ hthetiot/usbCameraTest3/build.gradle	2024-10-23 09:32:36.171231866 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest3"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest3/src/main/AndroidManifest.xml hthetiot/usbCameraTest3/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest3/src/main/AndroidManifest.xml	2024-10-23 09:12:17.887467939 +0200
++++ hthetiot/usbCameraTest3/src/main/AndroidManifest.xml	2024-10-23 09:32:36.172246288 +0200
+@@ -37,7 +37,8 @@
+         <activity
+             android:name="com.serenegiant.usbcameratest3.MainActivity"
+             android:screenOrientation="sensorLandscape"
+-            android:label="@string/app_name" >
++            android:label="@string/app_name"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest3/src/main/res/values/dimens.xml hthetiot/usbCameraTest3/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest3/src/main/res/values/dimens.xml	2024-10-23 09:12:17.889198317 +0200
++++ hthetiot/usbCameraTest3/src/main/res/values/dimens.xml	2024-10-23 09:32:36.175857722 +0200
+@@ -24,6 +24,7 @@
+ <resources>
+
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest4/build.gradle hthetiot/usbCameraTest4/build.gradle
+--- saki4510t/usbCameraTest4/build.gradle	2024-10-23 09:12:17.889597317 +0200
++++ hthetiot/usbCameraTest4/build.gradle	2024-10-23 09:32:36.176324557 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest4"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 9
+ 		versionName "3.00"
+@@ -51,12 +50,9 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+-	implementation("com.serenegiant:common:${commonLibVersion}") {
+-		exclude module: 'support-v4'
+-	}
++	implementation("com.serenegiant:common:${commonLibVersion}")
+ 	implementation project(':libuvccamera')
+ 	implementation project(':usbCameraCommon')
+ }
+diff --color -rupN saki4510t/usbCameraTest4/src/main/AndroidManifest.xml hthetiot/usbCameraTest4/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest4/src/main/AndroidManifest.xml	2024-10-23 09:12:17.889843276 +0200
++++ hthetiot/usbCameraTest4/src/main/AndroidManifest.xml	2024-10-23 09:32:36.176595517 +0200
+@@ -39,7 +39,8 @@
+         <activity
+             android:name=".MainActivity"
+             android:label="@string/app_name"
+-            android:launchMode="singleTask" >
++            android:launchMode="singleTask"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+
+@@ -57,7 +58,8 @@
+             </activity>
+         <service
+             android:name="com.serenegiant.service.UVCService"
+-			android:process=":uvcservice" >
++			android:process=":uvcservice"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="com.serenegiant.service.IUVCService" />
+                 <action android:name="com.serenegiant.service.IUVCSlaveService" />
+diff --color -rupN saki4510t/usbCameraTest4/src/main/java/com/serenegiant/service/CameraServer.java hthetiot/usbCameraTest4/src/main/java/com/serenegiant/service/CameraServer.java
+--- saki4510t/usbCameraTest4/src/main/java/com/serenegiant/service/CameraServer.java	2024-10-23 09:12:17.891025986 +0200
++++ hthetiot/usbCameraTest4/src/main/java/com/serenegiant/service/CameraServer.java	2024-10-23 09:32:36.178665943 +0200
+@@ -27,10 +27,12 @@ import java.io.IOException;
+ import java.lang.ref.WeakReference;
+ import java.lang.reflect.Field;
+
++import android.annotation.SuppressLint;
+ import android.content.Context;
+ import android.media.AudioManager;
+ import android.media.MediaScannerConnection;
+ import android.media.SoundPool;
++import android.os.Build;
+ import android.os.Handler;
+ import android.os.IBinder;
+ import android.os.Looper;
+@@ -61,13 +63,13 @@ public final class CameraServer extends
+
+ 	private int mFrameWidth = DEFAULT_WIDTH, mFrameHeight = DEFAULT_HEIGHT;
+
+-    private static class CallbackCookie {
++	private static class CallbackCookie {
+ 		boolean isConnected;
+ 	}
+
+-    private final RemoteCallbackList<IUVCServiceCallback> mCallbacks
++	private final RemoteCallbackList<IUVCServiceCallback> mCallbacks
+ 		= new RemoteCallbackList<IUVCServiceCallback>();
+-    private int mRegisteredCallbackCount;
++	private int mRegisteredCallbackCount;
+
+ 	private RendererHolder mRendererHolder;
+ 	private final WeakReference<CameraThread> mWeakThread;
+@@ -317,7 +319,7 @@ public final class CameraServer extends
+ 		private static final String TAG_THREAD = "CameraThread";
+ 		private final Object mSync = new Object();
+ 		private boolean mIsRecording;
+-	    private final WeakReference<Context> mWeakContext;
++		private final WeakReference<Context> mWeakContext;
+ 		private int mEncoderSurfaceId;
+ 		private int mFrameWidth, mFrameHeight;
+ 		/**
+@@ -594,31 +596,42 @@ public final class CameraServer extends
+ 			}
+ 		};
+
++
++
+ 		/**
+ 		 * prepare and load shutter sound for still image capturing
+ 		 */
+-		@SuppressWarnings("deprecation")
+-		private void loadShutterSound(final Context context) {
+-			if (DEBUG) Log.d(TAG_THREAD, "loadShutterSound:");
+-	    	// get system stream type using refrection
+-	        int streamType;
+-	        try {
+-	            final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
+-	            final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
+-	            streamType = sseField.getInt(null);
+-	        } catch (final Exception e) {
+-	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
+-	        }
+-	        if (mSoundPool != null) {
+-	        	try {
+-	        		mSoundPool.release();
+-	        	} catch (final Exception e) {
+-	        	}
+-	        	mSoundPool = null;
+-	        }
+-	        // load sutter sound from resource
+-		    mSoundPool = new SoundPool(2, streamType, 0);
+-		    mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
++		@SuppressLint("SoonBlockedPrivateApi")
++		protected void loadShutterSound(final Context context) {
++			// Define a default stream type
++			int streamType = AudioManager.STREAM_SYSTEM;
++
++			// Conditionally handle reflection based on the Android version
++			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {  // API 32 is Android 12L
++				try {
++					// Use reflection only for older versions
++					final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
++					final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
++					streamType = sseField.getInt(null);
++				} catch (final Exception e) {
++					// If reflection fails, fall back to STREAM_SYSTEM
++					streamType = AudioManager.STREAM_SYSTEM;
++				}
++			}
++
++			// Clean up existing SoundPool instance if necessary
++			if (mSoundPool != null) {
++				try {
++					mSoundPool.release();
++				} catch (final Exception e) {
++					// Handle the exception (optional)
++				}
++				mSoundPool = null;
++			}
++
++			// Initialize the SoundPool and load the shutter sound
++			mSoundPool = new SoundPool(2, streamType, 0);
++			mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
+ 		}
+
+ 		@Override
+diff --color -rupN saki4510t/usbCameraTest5/build.gradle hthetiot/usbCameraTest5/build.gradle
+--- saki4510t/usbCameraTest5/build.gradle	2024-10-23 09:12:17.894497908 +0200
++++ hthetiot/usbCameraTest5/build.gradle	2024-10-23 09:32:36.187536736 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest5"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest5/src/main/AndroidManifest.xml hthetiot/usbCameraTest5/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest5/src/main/AndroidManifest.xml	2024-10-23 09:12:17.894829576 +0200
++++ hthetiot/usbCameraTest5/src/main/AndroidManifest.xml	2024-10-23 09:32:36.188002738 +0200
+@@ -36,7 +36,8 @@
+         android:theme="@style/AppTheme" >
+         <activity
+             android:name="com.serenegiant.usbcameratest5.MainActivity"
+-            android:label="@string/app_name" >
++            android:label="@string/app_name"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest5/src/main/res/values/dimens.xml hthetiot/usbCameraTest5/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest5/src/main/res/values/dimens.xml	2024-10-23 09:12:17.896612203 +0200
++++ hthetiot/usbCameraTest5/src/main/res/values/dimens.xml	2024-10-23 09:32:36.198053869 +0200
+@@ -24,6 +24,7 @@
+ <resources>
+
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest6/build.gradle hthetiot/usbCameraTest6/build.gradle
+--- saki4510t/usbCameraTest6/build.gradle	2024-10-23 09:12:17.897197329 +0200
++++ hthetiot/usbCameraTest6/build.gradle	2024-10-23 09:32:36.202311639 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest6"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 8
+ 		versionName "3.00"
+@@ -51,7 +50,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest6/src/main/AndroidManifest.xml hthetiot/usbCameraTest6/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest6/src/main/AndroidManifest.xml	2024-10-23 09:12:17.897600913 +0200
++++ hthetiot/usbCameraTest6/src/main/AndroidManifest.xml	2024-10-23 09:32:36.203228310 +0200
+@@ -37,7 +37,8 @@
+         <activity
+             android:name="com.serenegiant.usbcameratest6.MainActivity"
+             android:label="@string/app_name"
+-            android:screenOrientation="sensorLandscape" >
++            android:screenOrientation="sensorLandscape"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest6/src/main/res/values/dimens.xml hthetiot/usbCameraTest6/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest6/src/main/res/values/dimens.xml	2024-10-23 09:12:17.899390833 +0200
++++ hthetiot/usbCameraTest6/src/main/res/values/dimens.xml	2024-10-23 09:32:36.206025032 +0200
+@@ -24,6 +24,7 @@
+ <resources>
+
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest7/build.gradle hthetiot/usbCameraTest7/build.gradle
+--- saki4510t/usbCameraTest7/build.gradle	2024-10-23 09:12:17.899926500 +0200
++++ hthetiot/usbCameraTest7/build.gradle	2024-10-23 09:32:36.206678202 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+     defaultConfig {
+         applicationId "com.serenegiant.usbcameratest7"
+-        minSdkVersion 18
++        minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 9
+ 		versionName "3.00"
+@@ -53,7 +52,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	implementation("com.serenegiant:common:${commonLibVersion}") {
+diff --color -rupN saki4510t/usbCameraTest7/src/main/AndroidManifest.xml hthetiot/usbCameraTest7/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest7/src/main/AndroidManifest.xml	2024-10-23 09:12:17.900271167 +0200
++++ hthetiot/usbCameraTest7/src/main/AndroidManifest.xml	2024-10-23 09:32:36.207280246 +0200
+@@ -37,7 +37,8 @@
+         <activity
+             android:name="com.serenegiant.usbcameratest7.MainActivity"
+             android:label="@string/app_name"
+-            android:screenOrientation="sensorLandscape" >
++            android:screenOrientation="sensorLandscape"
++            android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+diff --color -rupN saki4510t/usbCameraTest7/src/main/res/values/dimens.xml hthetiot/usbCameraTest7/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest7/src/main/res/values/dimens.xml	2024-10-23 09:12:17.902098170 +0200
++++ hthetiot/usbCameraTest7/src/main/res/values/dimens.xml	2024-10-23 09:32:36.209707341 +0200
+@@ -24,6 +24,7 @@
+ <resources>
+
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+ 	<dimen name="button_size">48dp</dimen>
+diff --color -rupN saki4510t/usbCameraTest8/build.gradle hthetiot/usbCameraTest8/build.gradle
+--- saki4510t/usbCameraTest8/build.gradle	2024-10-23 09:12:17.902538838 +0200
++++ hthetiot/usbCameraTest8/build.gradle	2024-10-23 09:32:36.210443095 +0200
+@@ -25,7 +25,6 @@ apply plugin: 'com.android.application'
+
+ android {
+ 	compileSdkVersion versionCompiler
+-	buildToolsVersion versionBuildTool
+
+ 	compileOptions {
+ 		sourceCompatibility javaSourceCompatibility
+@@ -34,7 +33,7 @@ android {
+
+ 	defaultConfig {
+ 		applicationId "com.serenegiant.usbcameratest8"
+-		minSdkVersion 18
++		minSdkVersion minTargetVersion
+ 		targetSdkVersion versionTarget
+ 		versionCode 1
+ 		versionName "1.0"
+@@ -53,7 +52,6 @@ android {
+ dependencies {
+ 	api fileTree(dir: 'libs', include: ['*.jar'])
+
+-	implementation "com.android.support:support-v4:${supportLibVersion}"
+ 	implementation "com.android.support:support-annotations:${supportLibVersion}"
+
+ 	androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+@@ -61,9 +59,7 @@ dependencies {
+ 	})
+ 	testImplementation 'junit:junit:4.12'
+
+-	implementation("com.serenegiant:common:${commonLibVersion}") {
+-		exclude module: 'support-v4'
+-	}
++	implementation("com.serenegiant:common:${commonLibVersion}")
+ 	implementation project(':libuvccamera')
+ 	implementation project(':usbCameraCommon')
+ }
+diff --color -rupN saki4510t/usbCameraTest8/src/main/AndroidManifest.xml hthetiot/usbCameraTest8/src/main/AndroidManifest.xml
+--- saki4510t/usbCameraTest8/src/main/AndroidManifest.xml	2024-10-23 09:12:17.903176089 +0200
++++ hthetiot/usbCameraTest8/src/main/AndroidManifest.xml	2024-10-23 09:32:36.212315395 +0200
+@@ -1,28 +1,29 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <!--
+-  ~  UVCCamera
+-  ~  library and sample to access to UVC web camera on non-rooted Android device
+-  ~
+-  ~ Copyright (c) 2014-2017 saki t_saki@serenegiant.com
+-  ~
+-  ~  Licensed under the Apache License, Version 2.0 (the "License");
+-  ~  you may not use this file except in compliance with the License.
+-  ~   You may obtain a copy of the License at
+-  ~
+-  ~      http://www.apache.org/licenses/LICENSE-2.0
+-  ~
+-  ~   Unless required by applicable law or agreed to in writing, software
+-  ~   distributed under the License is distributed on an "AS IS" BASIS,
+-  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-  ~   See the License for the specific language governing permissions and
+-  ~   limitations under the License.
+-  ~
+-  ~  All files in the folder are under this Apache License, Version 2.0.
+-  ~  Files in the libjpeg-turbo, libusb, libuvc, rapidjson folder
+-  ~  may have a different license, see the respective files.
+-  -->
++	~  UVCCamera
++	~  library and sample to access to UVC web camera on non-rooted Android device
++	~
++	~ Copyright (c) 2014-2017 saki t_saki@serenegiant.com
++	~
++	~  Licensed under the Apache License, Version 2.0 (the "License");
++	~  you may not use this file except in compliance with the License.
++	~   You may obtain a copy of the License at
++	~
++	~      http://www.apache.org/licenses/LICENSE-2.0
++	~
++	~   Unless required by applicable law or agreed to in writing, software
++	~   distributed under the License is distributed on an "AS IS" BASIS,
++	~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++	~   See the License for the specific language governing permissions and
++	~   limitations under the License.
++	~
++	~  All files in the folder are under this Apache License, Version 2.0.
++	~  Files in the libjpeg-turbo, libusb, libuvc, rapidjson folder
++	~  may have a different license, see the respective files.
++	-->
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-		  package="com.serenegiant.usbcameratest8">
++    xmlns:tools="http://schemas.android.com/tools"
++    package="com.serenegiant.usbcameratest8">
+
+ 	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+ 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+@@ -38,7 +39,9 @@
+ 		<activity
+ 			android:name=".MainActivity"
+ 			android:screenOrientation="sensorLandscape"
+-			android:label="@string/app_name">
++			android:label="@string/app_name"
++			android:exported="true"
++            tools:ignore="DiscouragedApi">
+ 			<intent-filter>
+ 				<action android:name="android.intent.action.MAIN"/>
+
+diff --color -rupN saki4510t/usbCameraTest8/src/main/res/values/dimens.xml hthetiot/usbCameraTest8/src/main/res/values/dimens.xml
+--- saki4510t/usbCameraTest8/src/main/res/values/dimens.xml	2024-10-23 09:12:17.905132509 +0200
++++ hthetiot/usbCameraTest8/src/main/res/values/dimens.xml	2024-10-23 09:32:36.218642925 +0200
+@@ -23,6 +23,7 @@
+
+ <resources>
+ 	<!-- Default screen margins, per the Android Design guidelines. -->
++  <dimen name="list_font_size">24sp</dimen>
+ 	<dimen name="activity_horizontal_margin">16dp</dimen>
+ 	<dimen name="activity_vertical_margin">16dp</dimen>
+

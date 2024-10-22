@@ -24,18 +24,19 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion versionCompiler
-	buildToolsVersion versionBuildTool
+    namespace "com.serenegiant.usbcameratest4"
+
+    compileSdkVersion 35
 
 	compileOptions {
-		sourceCompatibility javaSourceCompatibility
-		targetCompatibility javaTargetCompatibility
+		sourceCompatibility JavaVersion.VERSION_11
+		targetCompatibility JavaVersion.VERSION_11
 	}
 
     defaultConfig {
         applicationId "com.serenegiant.usbcameratest4"
-        minSdkVersion 18
-		targetSdkVersion versionTarget
+        minSdkVersion 21
+		targetSdkVersion 35
 		versionCode 9
 		versionName "3.00"
     }
@@ -46,17 +47,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt'
         }
     }
+
+    buildFeatures {
+        aidl true
+    }
+
+    sourceSets {
+        main {
+            aidl.srcDirs = ['src/main/aidl']
+        }
+    }
 }
 
 dependencies {
-	api fileTree(dir: 'libs', include: ['*.jar'])
-
-	implementation "com.android.support:support-v4:${supportLibVersion}"
-	implementation "com.android.support:support-annotations:${supportLibVersion}"
-
-	implementation("com.serenegiant:common:${commonLibVersion}") {
-		exclude module: 'support-v4'
-	}
+	implementation libs.support.annotations
+    implementation libs.support.v4
 	implementation project(':libuvccamera')
 	implementation project(':usbCameraCommon')
 }

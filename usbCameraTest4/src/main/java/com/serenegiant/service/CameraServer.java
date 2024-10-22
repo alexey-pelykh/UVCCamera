@@ -27,10 +27,12 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaScannerConnection;
 import android.media.SoundPool;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -61,13 +63,13 @@ public final class CameraServer extends Handler {
 	
 	private int mFrameWidth = DEFAULT_WIDTH, mFrameHeight = DEFAULT_HEIGHT;
 	
-    private static class CallbackCookie {
+	private static class CallbackCookie {
 		boolean isConnected;
 	}
 
-    private final RemoteCallbackList<IUVCServiceCallback> mCallbacks
+	private final RemoteCallbackList<IUVCServiceCallback> mCallbacks
 		= new RemoteCallbackList<IUVCServiceCallback>();
-    private int mRegisteredCallbackCount;
+	private int mRegisteredCallbackCount;
 
 	private RendererHolder mRendererHolder;
 	private final WeakReference<CameraThread> mWeakThread;
@@ -317,7 +319,7 @@ public final class CameraServer extends Handler {
 		private static final String TAG_THREAD = "CameraThread";
 		private final Object mSync = new Object();
 		private boolean mIsRecording;
-	    private final WeakReference<Context> mWeakContext;
+		private final WeakReference<Context> mWeakContext;
 		private int mEncoderSurfaceId;
 		private int mFrameWidth, mFrameHeight;
 		/**
@@ -594,31 +596,42 @@ public final class CameraServer extends Handler {
 			}
 		};
 
+
+
 		/**
 		 * prepare and load shutter sound for still image capturing
 		 */
-		@SuppressWarnings("deprecation")
-		private void loadShutterSound(final Context context) {
-			if (DEBUG) Log.d(TAG_THREAD, "loadShutterSound:");
-	    	// get system stream type using refrection
-	        int streamType;
-	        try {
-	            final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
-	            final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
-	            streamType = sseField.getInt(null);
-	        } catch (final Exception e) {
-	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
-	        }
-	        if (mSoundPool != null) {
-	        	try {
-	        		mSoundPool.release();
-	        	} catch (final Exception e) {
-	        	}
-	        	mSoundPool = null;
-	        }
-	        // load sutter sound from resource
-		    mSoundPool = new SoundPool(2, streamType, 0);
-		    mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
+		@SuppressLint("SoonBlockedPrivateApi")
+		protected void loadShutterSound(final Context context) {
+			// Define a default stream type
+			int streamType = AudioManager.STREAM_SYSTEM;
+
+			// Conditionally handle reflection based on the Android version
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {  // API 32 is Android 12L
+				try {
+					// Use reflection only for older versions
+					final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
+					final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
+					streamType = sseField.getInt(null);
+				} catch (final Exception e) {
+					// If reflection fails, fall back to STREAM_SYSTEM
+					streamType = AudioManager.STREAM_SYSTEM;
+				}
+			}
+
+			// Clean up existing SoundPool instance if necessary
+			if (mSoundPool != null) {
+				try {
+					mSoundPool.release();
+				} catch (final Exception e) {
+					// Handle the exception (optional)
+				}
+				mSoundPool = null;
+			}
+
+			// Initialize the SoundPool and load the shutter sound
+			mSoundPool = new SoundPool(2, streamType, 0);
+			mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
 		}
 
 		@Override

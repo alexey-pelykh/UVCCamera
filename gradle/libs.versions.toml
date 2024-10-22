@@ -1,0 +1,34 @@
+[versions]
+agp = "8.7.2"
+junit = "4.13.2"
+supportTestRunner = "1.0.2"
+supportEspressoCore = "3.0.2"
+appcompat7 = "28.0.0"
+material = "1.12.0"
+androidxJunit = "1.2.1"
+androidxEspressoCore = "3.6.1"
+appcompat = "1.7.0"
+constraintlayout = "2.2.0"
+fragment = "1.8.5"
+recyclerview = "1.3.2"
+swiperefreshlayout = "1.1.0"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+support-test-runner = { group = "com.android.support.test", name = "runner", version.ref = "supportTestRunner" }
+support-espresso-core = { group = "com.android.support.test.espresso", name = "espresso-core", version.ref = "supportEspressoCore" }
+appcompat-v7 = { group = "com.android.support", name = "appcompat-v7", version.ref = "appcompat7" }
+support-v4 = { module = "com.android.support:support-v4", version.ref = "appcompat7" }
+support-annotations = { module = "com.android.support:support-annotations", version.ref = "appcompat7" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxEspressoCore" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+
+[plugins]
+android-library = { id = "com.android.library", version.ref = "agp" }
+android-application = { id = "com.android.application", version.ref = "agp" }

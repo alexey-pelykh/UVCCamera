@@ -23,6 +23,7 @@
 
 package com.serenegiant.usbcameracommon;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -31,6 +32,7 @@ import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
 import android.media.MediaScannerConnection;
 import android.media.SoundPool;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -65,7 +67,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 abstract class AbstractUVCCameraHandler extends Handler {
-	private static final boolean DEBUG = true;	// TODO set false on release
+	private static final boolean DEBUG = true;  // TODO set false on release
 	private static final String TAG = "AbsUVCCameraHandler";
 
 	public interface CameraCallback {
@@ -515,7 +517,7 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			if (DEBUG) Log.v(TAG_THREAD, "handleCaptureStill:");
 			final Activity parent = mWeakParent.get();
 			if (parent == null) return;
-			mSoundPool.play(mSoundId, 0.2f, 0.2f, 0, 0, 1.0f);	// play shutter sound
+			mSoundPool.play(mSoundId, 0.2f, 0.2f, 0, 0, 1.0f);  // play shutter sound
 			try {
 				final Bitmap bitmap = mWeakCameraView.get().captureStillImage();
 				// get buffered output stream for saving a captured still image as a file on external storage.
@@ -544,16 +546,16 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			if (DEBUG) Log.v(TAG_THREAD, "handleStartRecording:");
 			try {
 				if ((mUVCCamera == null) || (mMuxer != null)) return;
-				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
+				final MediaMuxerWrapper muxer = new MediaMuxerWrapper(".mp4");  // if you record audio only, ".m4a" is also OK.
 				MediaVideoBufferEncoder videoEncoder = null;
 				switch (mEncoderType) {
-				case 1:	// for video capturing using MediaVideoEncoder
+				case 1: // for video capturing using MediaVideoEncoder
 					new MediaVideoEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
-				case 2:	// for video capturing using MediaVideoBufferEncoder
+				case 2: // for video capturing using MediaVideoBufferEncoder
 					videoEncoder = new MediaVideoBufferEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
-				// case 0:	// for video capturing using MediaSurfaceEncoder
+				// case 0:  // for video capturing using MediaSurfaceEncoder
 				default:
 					new MediaSurfaceEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
 					break;
@@ -700,27 +702,37 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		/**
 		 * prepare and load shutter sound for still image capturing
 		 */
-		@SuppressWarnings("deprecation")
-		private void loadShutterSound(final Context context) {
-	    	// get system stream type using reflection
-	        int streamType;
-	        try {
-	            final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
-	            final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
-	            streamType = sseField.getInt(null);
-	        } catch (final Exception e) {
-	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
-	        }
-	        if (mSoundPool != null) {
-	        	try {
-	        		mSoundPool.release();
-	        	} catch (final Exception e) {
-	        	}
-	        	mSoundPool = null;
-	        }
-	        // load shutter sound from resource
-		    mSoundPool = new SoundPool(2, streamType, 0);
-		    mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
+		@SuppressLint("SoonBlockedPrivateApi")
+		protected void loadShutterSound(final Context context) {
+			// Define a default stream type
+			int streamType = AudioManager.STREAM_SYSTEM;
+
+			// Conditionally handle reflection based on the Android version
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2) {  // API 32 is Android 12L
+				try {
+					// Use reflection only for older versions
+					final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
+					final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
+					streamType = sseField.getInt(null);
+				} catch (final Exception e) {
+					// If reflection fails, fall back to STREAM_SYSTEM
+					streamType = AudioManager.STREAM_SYSTEM;
+				}
+			}
+
+			// Clean up existing SoundPool instance if necessary
+			if (mSoundPool != null) {
+				try {
+					mSoundPool.release();
+				} catch (final Exception e) {
+					// Handle the exception (optional)
+				}
+				mSoundPool = null;
+			}
+
+			// Initialize the SoundPool and load the shutter sound
+			mSoundPool = new SoundPool(2, streamType, 0);
+			mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
 		}
 
 		@Override

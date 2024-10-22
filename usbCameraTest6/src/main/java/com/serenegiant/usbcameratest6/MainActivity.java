@@ -167,23 +167,23 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private final OnClickListener mOnClickListener = new OnClickListener() {
 		@Override
 		public void onClick(final View view) {
-			switch (view.getId()) {
-			case R.id.capture_button:
-				synchronized (mSync) {
-					if ((mCameraHandler != null) && mCameraHandler.isOpened()) {
-						if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
-							if (!mCameraHandler.isRecording()) {
-								mCaptureButton.setColorFilter(0xffff0000);	// turn red
-								mCameraHandler.startRecording();
-							} else {
-								mCaptureButton.setColorFilter(0);	// return to default color
-								mCameraHandler.stopRecording();
-							}
-						}
-					}
-				}
-				break;
-			}
+            if (view.getId() != R.id.capture_button) {
+                return;
+            }
+
+            synchronized (mSync) {
+                if ((mCameraHandler != null) && mCameraHandler.isOpened()) {
+                    if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
+                        if (!mCameraHandler.isRecording()) {
+                            mCaptureButton.setColorFilter(0xffff0000);	// turn red
+                            mCameraHandler.startRecording();
+                        } else {
+                            mCaptureButton.setColorFilter(0);	// return to default color
+                            mCameraHandler.stopRecording();
+                        }
+                    }
+                }
+            }
 		}
 	};
 
@@ -191,18 +191,18 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		= new CompoundButton.OnCheckedChangeListener() {
 		@Override
 		public void onCheckedChanged(final CompoundButton compoundButton, final boolean isChecked) {
-			switch (compoundButton.getId()) {
-			case R.id.camera_button:
-				synchronized (mSync) {
-					if (isChecked && (mCameraHandler != null) && !mCameraHandler.isOpened()) {
-						CameraDialog.showDialog(MainActivity.this);
-					} else {
-						mCameraHandler.close();
-						setCameraButton(false);
-					}
-				}
-				break;
-			}
+            if (compoundButton.getId() != R.id.camera_button) {
+                return;
+            }
+
+            synchronized (mSync) {
+                if (isChecked && (mCameraHandler != null) && !mCameraHandler.isOpened()) {
+                    CameraDialog.showDialog(MainActivity.this);
+                } else {
+                    mCameraHandler.close();
+                    setCameraButton(false);
+                }
+            }
 		}
 	};
 
@@ -212,19 +212,21 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private final OnLongClickListener mOnLongClickListener = new OnLongClickListener() {
 		@Override
 		public boolean onLongClick(final View view) {
-			switch (view.getId()) {
-			case R.id.camera_view_L:
-			case R.id.camera_view_R:
-				synchronized (mSync) {
-					if ((mCameraHandler != null) && mCameraHandler.isOpened()) {
-						if (checkPermissionWriteExternalStorage()) {
-							final File outputFile = MediaMuxerWrapper.getCaptureFile(Environment.DIRECTORY_DCIM, ".png");
-							mCameraHandler.captureStill(outputFile.toString());
-						}
-						return true;
-					}
-				}
-			}
+            final var viewId = view.getId();
+
+            if (viewId != R.id.camera_view_L && viewId != R.id.camera_view_R) {
+                return false;
+            }
+
+            synchronized (mSync) {
+                if ((mCameraHandler != null) && mCameraHandler.isOpened()) {
+                    if (checkPermissionWriteExternalStorage()) {
+                        final File outputFile = MediaMuxerWrapper.getCaptureFile(Environment.DIRECTORY_DCIM, ".png");
+                        mCameraHandler.captureStill(outputFile.toString());
+                    }
+                    return true;
+                }
+            }
 			return false;
 		}
 	};

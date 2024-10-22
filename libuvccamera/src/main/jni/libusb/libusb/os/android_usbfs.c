@@ -1311,10 +1311,10 @@ static int android_initialize_device(struct libusb_device *dev,
 	priv->descriptors_len = 0;
 	priv->fd = 0;
 	memset(desc, 0, sizeof(desc));
-    if (!lseek(fd, 0, SEEK_SET)) {
-        // ディスクリプタを読み込んでローカルキャッシュする
-        int length = read(fd, desc, sizeof(desc));
-        LOGD("Device::init read returned %d errno %d\n", length, errno);
+	if (!lseek(fd, 0, SEEK_SET)) {
+		// ディスクリプタを読み込んでローカルキャッシュする
+		int length = read(fd, desc, sizeof(desc));
+		LOGD("Device::init read returned %d errno %d\n", length, errno);
 		if (length > 0) {
 			priv->fd = fd;
 			priv->descriptors = usbi_reallocf(priv->descriptors, length);
@@ -1383,36 +1383,36 @@ int android_generate_device(struct libusb_context *ctx, struct libusb_device **d
 	int r = 0;
 
 	*dev = NULL;
- 	/* FIXME: session ID is not guaranteed unique as addresses can wrap and
- 	 * will be reused. instead we should add a simple sysfs attribute with
- 	 * a session ID. */
+	/* FIXME: session ID is not guaranteed unique as addresses can wrap and
+	 * will be reused. instead we should add a simple sysfs attribute with
+	 * a session ID. */
 	session_id = busnum << 8 | devaddr;
- 	LOGD("allocating new device for %d/%d (session %ld)", busnum, devaddr, session_id);
- 	*dev = usbi_alloc_device(ctx, session_id);	// この時点で参照カウンタ=1
- 	if (UNLIKELY(!dev)) {
- 		RETURN(LIBUSB_ERROR_NO_MEM, int);
- 	}
+	LOGD("allocating new device for %d/%d (session %ld)", busnum, devaddr, session_id);
+	*dev = usbi_alloc_device(ctx, session_id);	// この時点で参照カウンタ=1
+	if (UNLIKELY(!dev)) {
+		RETURN(LIBUSB_ERROR_NO_MEM, int);
+	}
 
- 	r = android_initialize_device(*dev, busnum, devaddr, fd);
- 	if (UNLIKELY(r < 0)) {
- 		LOGE("initialize_device failed: ret=%d", r);
- 		goto out;
- 	}
- 	r = usbi_sanitize_device(*dev);
- 	if (UNLIKELY(r < 0)) {
- 		LOGE("usbi_sanitize_device failed: ret=%d", r);
- 		goto out;
- 	}
+	r = android_initialize_device(*dev, busnum, devaddr, fd);
+	if (UNLIKELY(r < 0)) {
+		LOGE("initialize_device failed: ret=%d", r);
+		goto out;
+	}
+	r = usbi_sanitize_device(*dev);
+	if (UNLIKELY(r < 0)) {
+		LOGE("usbi_sanitize_device failed: ret=%d", r);
+		goto out;
+	}
 
 out:
- 	if (UNLIKELY(r < 0)) {
- 		libusb_unref_device(*dev);	// ここで参照カウンタが0になって破棄される
- 		*dev = NULL;
- 	} else {
- 		usbi_connect_device(*dev);
- 	}
+	if (UNLIKELY(r < 0)) {
+		libusb_unref_device(*dev);	// ここで参照カウンタが0になって破棄される
+		*dev = NULL;
+	} else {
+		usbi_connect_device(*dev);
+	}
 
- 	RETURN(r, int);
+	RETURN(r, int);
 }
 
 
@@ -2726,6 +2726,9 @@ static int handle_iso_completion(struct libusb_device_handle *handle,	// XXX add
 
 	usbi_mutex_lock(&itransfer->lock);
 	for (i = 0; i < num_urbs; i++) {
+		if(tpriv->iso_urbs == NULL){
+			return LIBUSB_TRANSFER_ERROR;
+		}
 		if (urb == tpriv->iso_urbs[i]) {
 			urb_idx = i + 1;
 			break;
@@ -2926,7 +2929,13 @@ static int reap_for_handle(struct libusb_device_handle *handle) {
 
 	usbi_dbg("urb type=%d status=%d transferred=%d",
 		urb->type, urb->status, urb->actual_length);
-
+	
+	// if not check status, will crash when target > 27
+	// current error status is -108
+	if(urb->status == -108){
+		return LIBUSB_ERROR_OTHER;
+	}
+	
 	switch (transfer->type) {
 	case LIBUSB_TRANSFER_TYPE_ISOCHRONOUS:
 		return handle_iso_completion(handle, itransfer, urb);

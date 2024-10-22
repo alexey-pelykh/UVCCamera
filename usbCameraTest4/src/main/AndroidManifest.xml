@@ -39,7 +39,8 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:launchMode="singleTask" >
+            android:launchMode="singleTask"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -57,7 +58,8 @@
             </activity>
         <service
             android:name="com.serenegiant.service.UVCService"
-			android:process=":uvcservice" >
+			android:process=":uvcservice" 
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.serenegiant.service.IUVCService" />
                 <action android:name="com.serenegiant.service.IUVCSlaveService" />

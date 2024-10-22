@@ -140,18 +140,17 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private final OnClickListener mOnClickListener = new OnClickListener() {
 		@Override
 		public void onClick(final View view) {
-			switch (view.getId()) {
-			case R.id.camera_view_L:
-				if (mHandlerL != null) {
-					if (!mHandlerL.isOpened()) {
-						CameraDialog.showDialog(MainActivity.this);
-					} else {
-						mHandlerL.close();
-						setCameraButton();
-					}
-				}
-				break;
-			case R.id.capture_button_L:
+            final var viewId = view.getId();
+			if (viewId == R.id.camera_view_L) {
+                if (mHandlerL != null) {
+                    if (!mHandlerL.isOpened()) {
+                        CameraDialog.showDialog(MainActivity.this);
+                    } else {
+                        mHandlerL.close();
+                        setCameraButton();
+                    }
+                }
+            } else if (viewId == R.id.capture_button_L) {
 				if (mHandlerL != null) {
 					if (mHandlerL.isOpened()) {
 						if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
@@ -165,8 +164,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 						}
 					}
 				}
-				break;
-			case R.id.camera_view_R:
+            } else if (viewId == R.id.camera_view_R) {
 				if (mHandlerR != null) {
 					if (!mHandlerR.isOpened()) {
 						CameraDialog.showDialog(MainActivity.this);
@@ -175,8 +173,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 						setCameraButton();
 					}
 				}
-				break;
-			case R.id.capture_button_R:
+            } else if (viewId == R.id.capture_button_R) {
 				if (mHandlerR != null) {
 					if (mHandlerR.isOpened()) {
 						if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
@@ -190,7 +187,6 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 						}
 					}
 				}
-				break;
 			}
 		}
 	};

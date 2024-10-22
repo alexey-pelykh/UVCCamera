@@ -1,0 +1,6 @@
+[submodule "upstream-saki4510t"]
+	path = upstreams/saki4510t
+	url = https://github.com/saki4510t/UVCCamera.git
+[submodule "upstream-hthetiot"]
+	path = upstreams/hthetiot
+	url = https://github.com/hthetiot/UVCCamera.git

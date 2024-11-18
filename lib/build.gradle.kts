@@ -123,10 +123,11 @@ publishing {
     }
 }
 
-signing {
-    useInMemoryPgpKeys(
-        System.getenv("GPG_PRIVATE_KEY"),
-        System.getenv("GPG_PASSPHRASE")
-    )
-    sign(publishing.publications["release"])
+val gpgPassphrase: String? = System.getenv("GPG_PASSPHRASE")
+val gpgPrivateKey: String? = System.getenv("GPG_PRIVATE_KEY")
+if (gpgPassphrase != null && gpgPrivateKey != null) {
+    signing {
+        useInMemoryPgpKeys(gpgPrivateKey, gpgPassphrase)
+        sign(publishing.publications["release"])
+    }
 }

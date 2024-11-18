@@ -3,6 +3,7 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/alexey-pelykh/UVCCamera?style=flat&logo=github)](https://github.com/alexey-pelykh/UVCCamera)
 [![GitHub License](https://img.shields.io/github/license/alexey-pelykh/UVCCamera)](./LICENSE.md)
 [![Maven Central Version](https://img.shields.io/maven-central/v/org.uvccamera/lib)](https://mvnrepository.com/artifact/org.uvccamera/lib)
+[![Pub Version](https://img.shields.io/pub/v/uvccamera)](https://pub.dev/packages/uvccamera)
 
 This project is a hard fork of the original [UVCCamera by saki4510t](https://github.com/saki4510t/UVCCamera) and is
 brought to you by [Alexey Pelykh](https://github.com/alexey-pelykh) with a great gratitude to the original project's
@@ -10,6 +11,8 @@ author [saki4510t](https://github.com/saki4510t/) and its community of contribut
 the original project's forks and PRs.
 
 ## Usage
+
+### Native
 
 The library is available on Maven Central. To use it in your project, add the following dependency:
 
@@ -24,6 +27,17 @@ or to your `build.gradle.kts` file in the `dependencies` block:
 ```kotlin
 implementation("org.uvccamera:lib:0.1.0")
 ```
+
+### Flutter
+
+The Flutter plugin is available on pub.dev. To use it in your Flutter project, add the following dependency:
+
+```yaml
+dependencies:
+  uvccamera: ^0.1.0
+```
+
+See the [Flutter example](./flutter/example) for an app that uses the plugin.
 
 ## License
 

@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  package:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up temurin-jdk-21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Git Hub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ndk-bundle
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}
+
+      - name: Build artifacts
+        run: ./gradlew :lib:assembleRelease
+
+      - name: Build docs
+        run: |
+          sudo apt-get install -y pandoc
+
+          mkdir -p build/gh-pages
+          pandoc \
+            -f gfm -t html5 -s --shift-heading-level-by=-1 --lua-filter=gh-pages/filter.lua -H gh-pages/header.html \
+            -o build/gh-pages/index.html README.md
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/gh-pages
+
+      - name: Publish artifacts
+        if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+        run: ./gradlew publish -Puvccamera.version=${{ github.ref_name }}-SNAPSHOT
+
+  publish-github-pages:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    needs:
+      - package
+
+    environment:
+      name: github-pages
+      url: ${{ steps.publish-github-pages.outputs.page_url }}
+
+    steps:
+      - name: Set up Git Hub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Publish GitHub Pages
+        id: publish-github-pages
+        uses: actions/deploy-pages@v4

@@ -52,5 +52,5 @@ android {
 dependencies {
 	implementation libs.support.annotations
 	implementation libs.support.v4
-	implementation project(':libuvccamera')
+	implementation project(':lib')
 }

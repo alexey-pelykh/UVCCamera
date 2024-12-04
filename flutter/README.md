@@ -4,11 +4,12 @@
 [![GitHub License](https://img.shields.io/github/license/alexey-pelykh/UVCCamera)](./LICENSE)
 [![Pub Version](https://img.shields.io/pub/v/uvccamera)](https://pub.dev/packages/uvccamera)
 
-A Flutter plugin for the [UVCCamera](https://uvccamera.org) library.
+A [UVCCamera](https://uvccamera.org) plugin for Flutter brought to you by [Alexey Pelykh](https://alexey-pelykh.com).
 
 ## Usage
 
-The Flutter plugin is available on pub.dev. To use it in your Flutter project, add the following dependency:
+The Flutter plugin is available on [pub.dev](https://pub.dev/packages/uvccamera). To use it in your Flutter project, add
+the following dependency:
 
 ```yaml
 dependencies:

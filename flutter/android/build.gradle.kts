@@ -1,10 +1,14 @@
 val flutterSdk: String? = System.getenv("FLUTTER_ROOT")
 
 plugins {
-    id("com.android.library") // version "8.7.2"
+    id("com.android.library") /* version "8.7.2" */ // NOTE: Uncomment this line to open the project in Android Studio.
 }
 
-version = findProperty("uvccamera.version") as String? ?: "0.0.0-SNAPSHOT"
+version = {
+    val pubspecVersionMatch = file("../pubspec.yaml").readText().toRegex().find("version:\s+(.*)")
+    val pubspecVersion = pubspecVersionMatch?.groupValues?.get(1)
+    return pubspecVersion ?: "0.0.0-SNAPSHOT"
+}()
 
 android {
     namespace = "org.uvccamera"

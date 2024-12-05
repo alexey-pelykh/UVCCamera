@@ -191,7 +191,7 @@ public class CameraDialog extends DialogFragment {
 
 	public void updateDevices() {
 //		mUSBMonitor.dumpDevices();
-		final List<DeviceFilter> filter = DeviceFilter.getDeviceFilters(getActivity(), com.serenegiant.uvccamera.R.xml.device_filter);
+		final List<DeviceFilter> filter = DeviceFilter.getDeviceFilters(getActivity(), org.uvccamera.lib.R.xml.device_filter);
 		mDeviceListAdapter = new DeviceListAdapter(getActivity(), mUSBMonitor.getDeviceList(filter.get(0)));
 		mSpinner.setAdapter(mDeviceListAdapter);
 	}

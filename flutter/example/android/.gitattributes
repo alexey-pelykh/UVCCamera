@@ -1,0 +1,5 @@
+# Gradle Wrapper script for Linux should use lf
+/gradlew text eol=lf
+
+# Gradle Wrapper script for Windows should use crlf
+/gradlew.bat text eol=crlf

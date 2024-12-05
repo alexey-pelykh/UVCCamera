@@ -126,7 +126,7 @@ public class UVCService extends BaseService {
 			.setWhen(System.currentTimeMillis())  // the time stamp
 			.setContentTitle(getText(R.string.app_name))  // the label of the entry
 			.setContentText(text)  // the contents of the entry
-			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))  // The intent to send when the entry is clicked
+			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE))  // The intent to send when the entry is clicked
 			.build();
 
 		startForeground(NOTIFICATION, notification);

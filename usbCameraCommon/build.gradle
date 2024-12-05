@@ -46,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation libs.appcompat.v7
 	implementation libs.support.annotations
 	implementation project(':lib')
 }

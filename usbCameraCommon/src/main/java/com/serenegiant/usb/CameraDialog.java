@@ -46,7 +46,7 @@ import android.widget.Spinner;
 import com.serenegiant.usb.DeviceFilter;
 import com.serenegiant.usb.USBMonitor;
 
-import com.serenegiant.uvccamera.R;
+import com.serenegiant.usbcameracommon.R;
 
 public class CameraDialog extends DialogFragment {
 	private static final String TAG = CameraDialog.class.getSimpleName();
@@ -55,7 +55,7 @@ public class CameraDialog extends DialogFragment {
 		public USBMonitor getUSBMonitor();
 		public void onDialogResult(boolean canceled);
 	}
-	
+
 	/**
 	 * Helper method
 	 * @param parent FragmentActivity
@@ -191,7 +191,7 @@ public class CameraDialog extends DialogFragment {
 
 	public void updateDevices() {
 //		mUSBMonitor.dumpDevices();
-		final List<DeviceFilter> filter = DeviceFilter.getDeviceFilters(getActivity(), R.xml.device_filter);
+		final List<DeviceFilter> filter = DeviceFilter.getDeviceFilters(getActivity(), com.serenegiant.uvccamera.R.xml.device_filter);
 		mDeviceListAdapter = new DeviceListAdapter(getActivity(), mUSBMonitor.getDeviceList(filter.get(0)));
 		mSpinner.setAdapter(mDeviceListAdapter);
 	}

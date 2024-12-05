@@ -48,7 +48,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.appcompat.v7)
     testImplementation(libs.junit)
     androidTestImplementation(libs.support.test.runner)
     androidTestImplementation(libs.support.espresso.core)

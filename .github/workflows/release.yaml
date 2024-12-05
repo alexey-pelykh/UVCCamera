@@ -46,8 +46,8 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}
 
-      - name: Build library
-        run: ./gradlew :lib:assembleRelease :lib:publishToMavenLocal
+      - name: Build
+        run: ./gradlew assembleRelease publishToMavenLocal
 
       - name: Build Flutter example
         working-directory: flutter/example

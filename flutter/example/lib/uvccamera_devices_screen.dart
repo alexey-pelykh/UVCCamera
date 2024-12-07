@@ -36,6 +36,12 @@ class _UvcCameraDevicesScreenState extends State<UvcCameraDevicesScreen> {
         }
       });
     });
+
+    UvcCamera.getDevices().then((devices) {
+      setState(() {
+        _devices.addAll(devices);
+      });
+    });
   }
 
   @override

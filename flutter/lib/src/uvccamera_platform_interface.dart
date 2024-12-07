@@ -1,4 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:cross_file/cross_file.dart';
 
 import 'uvccamera_button_event.dart';
 import 'uvccamera_device.dart';
@@ -69,8 +70,16 @@ abstract class UvcCameraPlatformInterface extends PlatformInterface {
     throw UnimplementedError('getPreviewMode() has not been implemented.');
   }
 
-  Future<void> setPreviewMode(int cameraId, UvcCameraMode mode) {
+  Future<void> setPreviewMode(int cameraId, UvcCameraMode previewMode) {
     throw UnimplementedError('setPreviewMode() has not been implemented.');
+  }
+
+  Future<XFile> startVideoRecording(int cameraId, UvcCameraMode videoRecordingMode) {
+    throw UnimplementedError('startVideoRecording() has not been implemented.');
+  }
+
+  Future<void> stopVideoRecording(int cameraId) {
+    throw UnimplementedError('stopVideoRecording() has not been implemented.');
   }
 
   Stream<UvcCameraDeviceEvent> get deviceEventStream {

@@ -8,6 +8,7 @@ export 'src/uvccamera_device.dart' show UvcCameraDevice;
 export 'src/uvccamera_device_event.dart' show UvcCameraDeviceEvent;
 export 'src/uvccamera_device_event_type.dart' show UvcCameraDeviceEventType;
 export 'src/uvccamera_frame_format.dart' show UvcCameraFrameFormat;
+export 'src/uvccamera_mode.dart' show UvcCameraMode;
 export 'src/uvccamera_preview.dart' show UvcCameraPreview;
 export 'src/uvccamera_resolution_preset.dart' show UvcCameraResolutionPreset;
 export 'src/uvccamera_status.dart' show UvcCameraStatus;

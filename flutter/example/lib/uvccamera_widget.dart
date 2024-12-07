@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uvccamera/uvccamera.dart';
@@ -160,6 +161,20 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
     }
   }
 
+  Future<void> _startVideoRecording(UvcCameraMode videoRecordingMode) async {
+    await _cameraController!.startVideoRecording(videoRecordingMode);
+  }
+
+  Future<void> _stopVideoRecording() async {
+    final XFile outputFile = await _cameraController!.stopVideoRecording();
+
+    outputFile.length().then((length) {
+      setState(() {
+        _log = 'video file: ${outputFile.path} ($length bytes)\n$_log';
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isDeviceAttached) {
@@ -202,21 +217,55 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
       future: _cameraControllerInitializeFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return UvcCameraPreview(
-            _cameraController!,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  _log,
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontFamily: 'Courier',
-                    fontSize: 10.0,
+          return Stack(
+            children: [
+              UvcCameraPreview(
+                _cameraController!,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      _log,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontFamily: 'Courier',
+                        fontSize: 10.0,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 50.0),
+                  child: ValueListenableBuilder<UvcCameraControllerState>(
+                    valueListenable: _cameraController!,
+                    builder: (context, value, child) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          FloatingActionButton(
+                            backgroundColor: value.isRecordingVideo ? Colors.red : Colors.white,
+                            onPressed: () async {
+                              if (value.isRecordingVideo) {
+                                await _stopVideoRecording();
+                              } else {
+                                await _startVideoRecording(value.previewMode!);
+                              }
+                            },
+                            child: Icon(
+                              value.isRecordingVideo ? Icons.stop : Icons.videocam,
+                              color: value.isRecordingVideo ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           );
         } else {
           return const Center(child: CircularProgressIndicator());

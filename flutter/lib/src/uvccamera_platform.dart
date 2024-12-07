@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:cross_file/cross_file.dart';
 
 import 'uvccamera_button_event.dart';
 import 'uvccamera_device.dart';
@@ -194,10 +195,34 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
   }
 
   @override
-  Future<void> setPreviewMode(int cameraId, UvcCameraMode mode) async {
+  Future<void> setPreviewMode(int cameraId, UvcCameraMode previewMode) async {
     await _nativeMethodChannel.invokeMethod<void>('setPreviewMode', {
       'cameraId': cameraId,
-      'mode': mode.toMap(),
+      'previewMode': previewMode.toMap(),
+    });
+  }
+
+  @override
+  Future<XFile> startVideoRecording(int cameraId, UvcCameraMode videoRecordingMode) async {
+    final result = await _nativeMethodChannel.invokeMethod<String>('startVideoRecording', {
+      'cameraId': cameraId,
+      'videoRecordingMode': videoRecordingMode.toMap(),
+    });
+
+    if (result == null) {
+      throw PlatformException(
+        code: 'UNKNOWN',
+        message: 'Unable to start video recording for camera: $cameraId',
+      );
+    }
+
+    return XFile(result);
+  }
+
+  @override
+  Future<void> stopVideoRecording(int cameraId) async {
+    await _nativeMethodChannel.invokeMethod<void>('stopVideoRecording', {
+      'cameraId': cameraId,
     });
   }
 

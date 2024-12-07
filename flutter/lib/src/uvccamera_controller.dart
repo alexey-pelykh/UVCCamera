@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:cross_file/cross_file.dart';
 
 import 'uvccamera_button_event.dart';
 import 'uvccamera_controller_state.dart';
 import 'uvccamera_device.dart';
+import 'uvccamera_mode.dart';
 import 'uvccamera_platform_interface.dart';
 import 'uvccamera_resolution_preset.dart';
 import 'uvccamera_status_event.dart';
@@ -150,6 +152,57 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       throw Exception('UvcCameraController is not initialized');
     }
     return _cameraButtonEventStream!;
+  }
+
+  /// Starts video recording.
+  Future<void> startVideoRecording(UvcCameraMode videoRecordingMode) async {
+    if (_isDisposed) {
+      throw Exception('UvcCameraController is disposed');
+    }
+    if (_cameraId == null) {
+      throw Exception('UvcCameraController is not initialized');
+    }
+
+    if (value.isRecordingVideo) {
+      throw Exception('UvcCameraController is already recording video');
+    }
+
+    final XFile videoRecordingFile = await UvcCameraPlatformInterface.instance.startVideoRecording(
+      _cameraId!,
+      videoRecordingMode,
+    );
+
+    value = value.copyWith(
+      isRecordingVideo: true,
+      videoRecordingMode: videoRecordingMode,
+      videoRecordingFile: videoRecordingFile,
+    );
+  }
+
+  /// Stops video recording.
+  Future<XFile> stopVideoRecording() async {
+    if (_isDisposed) {
+      throw Exception('UvcCameraController is disposed');
+    }
+    if (_cameraId == null) {
+      throw Exception('UvcCameraController is not initialized');
+    }
+
+    if (!value.isRecordingVideo) {
+      throw Exception('UvcCameraController is not recording video');
+    }
+
+    await UvcCameraPlatformInterface.instance.stopVideoRecording(_cameraId!);
+
+    final XFile videoRecordingFile = value.videoRecordingFile!;
+
+    value = value.copyWith(
+      isRecordingVideo: false,
+      videoRecordingMode: null,
+      videoRecordingFile: null,
+    );
+
+    return videoRecordingFile;
   }
 
   /// Returns a widget showing a live camera preview.

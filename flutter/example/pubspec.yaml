@@ -10,6 +10,7 @@ dependencies:
     sdk: flutter
   uvccamera:
     path: ../
+  cross_file: ^0.3.4+2
   cupertino_icons: ^1.0.8
   permission_handler: ^11.3.1
 

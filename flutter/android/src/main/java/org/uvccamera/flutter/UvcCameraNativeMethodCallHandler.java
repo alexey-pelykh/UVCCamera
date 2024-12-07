@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 
 import com.serenegiant.usb.Size;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -362,6 +363,61 @@ import io.flutter.plugin.common.MethodChannel;
                             frameHeight,
                             frameFormatValue
                     );
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(null);
+            }
+            case "startVideoRecording" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                final var videoRecordingMode = call.<Map<String, Object>>argument("videoRecordingMode");
+                if (videoRecordingMode == null) {
+                    result.error("InvalidArgument", "videoRecordingMode is required", null);
+                    return;
+                }
+
+                final var frameWidth = (Integer)videoRecordingMode.get("frameWidth");
+                if (frameWidth == null) {
+                    result.error("InvalidArgument", "videoRecordingMode.frameWidth is required", null);
+                    return;
+                }
+
+                final var frameHeight = (Integer)videoRecordingMode.get("frameHeight");
+                if (frameHeight == null) {
+                    result.error("InvalidArgument", "videoRecordingMode.frameHeight is required", null);
+                    return;
+                }
+
+                final File videoRecordingFile;
+                try {
+                    videoRecordingFile = uvcCameraPlatform.startVideoRecording(
+                            cameraId,
+                            frameWidth,
+                            frameHeight
+                    );
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(videoRecordingFile.getAbsolutePath());
+            }
+            case "stopVideoRecording" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.stopVideoRecording(cameraId);
                 } catch (final Exception e) {
                     result.error(e.getClass().getSimpleName(), e.getMessage(), null);
                     return;

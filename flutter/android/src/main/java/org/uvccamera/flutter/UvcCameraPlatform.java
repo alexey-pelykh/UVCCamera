@@ -3,6 +3,7 @@ package org.uvccamera.flutter;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
+import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -15,6 +16,8 @@ import com.serenegiant.usb.Size;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.UVCCamera;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -497,6 +500,8 @@ import io.flutter.view.TextureRegistry;
         final var buttonEventStreamHandler = new UvcCameraButtonEventStreamHandler();
         buttonEventChannel.setStreamHandler(buttonEventStreamHandler);
 
+        final var mediaRecorder = new MediaRecorder();
+
         camerasResources.put(cameraId, new UvcCameraResources(
                 cameraId,
                 cameraTexture,
@@ -507,7 +512,8 @@ import io.flutter.view.TextureRegistry;
                 statusCallback,
                 buttonEventChannel,
                 buttonEventStreamHandler,
-                buttonCallback
+                buttonCallback,
+                mediaRecorder
         ));
 
         return cameraId;
@@ -528,6 +534,16 @@ import io.flutter.view.TextureRegistry;
 
         cameraResources.statusEventChannel().setStreamHandler(null);
         cameraResources.buttonEventChannel().setStreamHandler(null);
+
+        Log.d(TAG, "closeCamera: releasing media recorder");
+        try {
+            final var mediaRecorder = cameraResources.mediaRecorder();
+            mediaRecorder.reset();
+            mediaRecorder.release();
+            Log.d(TAG, "closeCamera: media recorder released");
+        } catch (final Exception e) {
+            Log.w(TAG, "closeCamera: failed to release media recorder", e);
+        }
 
         Log.d(TAG, "closeCamera: stopping preview");
         try {
@@ -833,6 +849,90 @@ import io.flutter.view.TextureRegistry;
                 frameHeight,
                 frameFormat == 4 ? UVCCamera.FRAME_FORMAT_YUYV : UVCCamera.FRAME_FORMAT_MJPEG
         );
+    }
+
+    /**
+     * Starts video recording for the specified camera
+     *
+     * @param cameraId    the camera ID
+     * @param frameWidth  the frame width
+     * @param frameHeight the frame height
+     * @return the video recording file
+     */
+    public File startVideoRecording(final int cameraId, final int frameWidth, final int frameHeight) {
+        Log.v(TAG, "startVideoRecording"
+                + ": cameraId=" + cameraId
+                + ", frameWidth=" + frameWidth
+                + ", frameHeight=" + frameHeight
+        );
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        final var applicationContext = this.applicationContext.get();
+        if (applicationContext == null) {
+            throw new IllegalStateException("applicationContext reference has expired");
+        }
+
+        final var mediaRecorder = cameraResources.mediaRecorder();
+        mediaRecorder.reset();
+
+        final var outputDir = applicationContext.getCacheDir();
+        final File outputFile;
+        try {
+            outputFile = File.createTempFile("REC", ".mp4", outputDir);
+        } catch (IOException | SecurityException e) {
+            throw new IllegalStateException("Failed to create video recording file", e);
+        }
+
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setVideoSize(frameWidth, frameHeight);
+        mediaRecorder.setVideoFrameRate(30);
+        mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
+
+        try {
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+            mediaRecorder.reset();
+
+            throw new IllegalStateException("Failed to prepare media recorder", e);
+        }
+
+        try {
+            final var mediaRecorderSurface = mediaRecorder.getSurface();
+            cameraResources.camera().startCapture(mediaRecorderSurface);
+            mediaRecorder.start();
+        } catch (final Exception e) {
+            mediaRecorder.reset();
+
+            throw new IllegalStateException("Failed to start capture", e);
+        }
+
+        return outputFile;
+    }
+
+    /**
+     * Stops video recording for the specified camera
+     *
+     * @param cameraId the camera ID
+     */
+    public void stopVideoRecording(final int cameraId) {
+        Log.v(TAG, "stopVideoRecording: cameraId=" + cameraId);
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        cameraResources.camera().stopCapture();
+
+        final var mediaRecorder = cameraResources.mediaRecorder();
+        mediaRecorder.stop();
+        mediaRecorder.reset();
     }
 
     /**

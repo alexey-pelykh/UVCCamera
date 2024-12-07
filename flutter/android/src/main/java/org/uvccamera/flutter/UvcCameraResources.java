@@ -1,5 +1,6 @@
 package org.uvccamera.flutter;
 
+import android.media.MediaRecorder;
 import android.view.Surface;
 
 import com.serenegiant.usb.UVCCamera;
@@ -20,6 +21,7 @@ import io.flutter.view.TextureRegistry;
         UvcCameraStatusCallback statusCallback,
         EventChannel buttonEventChannel,
         UvcCameraButtonEventStreamHandler buttonEventStreamHandler,
-        UvcCameraButtonCallback buttonCallback
+        UvcCameraButtonCallback buttonCallback,
+        MediaRecorder mediaRecorder
 ) {
 }

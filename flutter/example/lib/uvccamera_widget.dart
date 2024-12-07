@@ -165,6 +165,16 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
     await _cameraController!.startVideoRecording(videoRecordingMode);
   }
 
+  Future<void> _takePicture() async {
+    final XFile outputFile = await _cameraController!.takePicture();
+
+    outputFile.length().then((length) {
+      setState(() {
+        _log = 'image file: ${outputFile.path} ($length bytes)\n$_log';
+      });
+    });
+  }
+
   Future<void> _stopVideoRecording() async {
     final XFile outputFile = await _cameraController!.stopVideoRecording();
 
@@ -245,6 +255,13 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          FloatingActionButton(
+                            backgroundColor: Colors.white,
+                            onPressed: () async => {
+                              await _takePicture(),
+                            },
+                            child: Icon(Icons.camera_alt, color: Colors.black),
+                          ),
                           FloatingActionButton(
                             backgroundColor: value.isRecordingVideo ? Colors.red : Colors.white,
                             onPressed: () async {

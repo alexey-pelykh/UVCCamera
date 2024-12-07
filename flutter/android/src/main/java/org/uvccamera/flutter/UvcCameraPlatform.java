@@ -2,6 +2,9 @@ package org.uvccamera.flutter;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.usb.UsbDevice;
 import android.media.MediaRecorder;
 import android.os.Handler;
@@ -17,6 +20,7 @@ import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.UVCCamera;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -849,6 +853,145 @@ import io.flutter.view.TextureRegistry;
                 frameHeight,
                 frameFormat == 4 ? UVCCamera.FRAME_FORMAT_YUYV : UVCCamera.FRAME_FORMAT_MJPEG
         );
+    }
+
+    /**
+     * Takes a picture for the specified camera
+     *
+     * @param cameraId      the camera ID
+     * @param resultHandler the handler to be notified when the picture is taken
+     */
+    public void takePicture(final int cameraId, UvcCameraTakePictureResultHandler resultHandler) {
+        Log.v(TAG, "takePicture"
+                + ": cameraId=" + cameraId
+        );
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        final var applicationContext = this.applicationContext.get();
+        if (applicationContext == null) {
+            throw new IllegalStateException("applicationContext reference has expired");
+        }
+
+        final var outputDir = applicationContext.getCacheDir();
+        final File outputFile;
+        try {
+            outputFile = File.createTempFile("PIC", ".jpg", outputDir);
+        } catch (IOException | SecurityException e) {
+            throw new IllegalStateException("Failed to create picture file", e);
+        }
+
+        cameraResources.camera().setFrameCallback(
+                new UvcCameraTakePictureFrameCallback(
+                        this,
+                        cameraId,
+                        outputFile,
+                        resultHandler
+                ),
+                UVCCamera.PIXEL_FORMAT_NV21
+        );
+    }
+
+    /**
+     * Handles the taken picture
+     *
+     * @param cameraId      the camera ID
+     * @param outputFile    the output file
+     * @param frame         the frame
+     * @param resultHandler the result handler
+     */
+    /* package-private */ void handleTakenPicture(
+            final int cameraId,
+            final File outputFile,
+            final ByteBuffer frame,
+            final UvcCameraTakePictureResultHandler resultHandler
+    ) {
+        Log.v(TAG, "handleTakenPicture"
+                + ": cameraId=" + cameraId
+                + ", outputFile=" + outputFile
+                + ", frame=" + frame
+                + ", resultHandler=" + resultHandler
+        );
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        // Create copy of the frame data as the frame buffer is owned by the native side (libuvc)
+        final var frameData = new byte[frame.remaining()];
+        frame.get(frameData);
+
+        // NOTE: The frame callback should've been detached here yet that will cause a deadlock
+
+        // Save the taken picture to the file using the worker looper
+        mainLooperHandler.post(() -> {
+            // Detach the frame callback
+            cameraResources.camera().setFrameCallback(null, 0);
+
+            try {
+                saveTakenPictureToFile(cameraId, outputFile, frameData);
+                resultHandler.onResult(outputFile, null);
+            } catch(final Exception e) {
+                Log.e(TAG, "Failed to save taken picture to file", e);
+                resultHandler.onResult(null, e);
+            }
+        });
+    }
+
+    /**
+     * Saves the taken picture to the specified file
+     *
+     * @param cameraId   the camera ID
+     * @param outputFile the output file
+     * @param frameData  the frame data
+     */
+    private void saveTakenPictureToFile(final int cameraId, final File outputFile, final byte[] frameData) {
+        Log.v(TAG, "saveTakenPictureToFile"
+                + ": cameraId=" + cameraId
+                + ", outputFile=" + outputFile
+                + ", frameData=[... " + frameData.length + " byte(s) ...]"
+        );
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        final var previewSize = cameraResources.camera().getPreviewSize();
+        final var yuvImage = new YuvImage(
+                frameData,
+                ImageFormat.NV21,
+                previewSize.width,
+                previewSize.height,
+                null
+        );
+
+        final FileOutputStream outputFileStream;
+        try {
+            outputFileStream = new FileOutputStream(outputFile);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to open picture file output stream", e);
+        }
+
+        try {
+            yuvImage.compressToJpeg(
+                    new Rect(0, 0, previewSize.width, previewSize.height),
+                    100,
+                    outputFileStream
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to write picture file", e);
+        } finally {
+            try {
+                outputFileStream.close();
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to close picture file output stream", e);
+            }
+        }
     }
 
     /**

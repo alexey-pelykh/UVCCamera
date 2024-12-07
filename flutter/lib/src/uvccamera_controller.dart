@@ -143,6 +143,17 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
     return _cameraButtonEventStream!;
   }
 
+  /// Takes a picture.
+  Future<XFile> takePicture() async {
+    _ensureInitializedNotDisposed();
+
+    final XFile pictureFile = await UvcCameraPlatformInterface.instance.takePicture(
+      _cameraId!,
+    );
+
+    return pictureFile;
+  }
+
   /// Starts video recording.
   Future<void> startVideoRecording(UvcCameraMode videoRecordingMode) async {
     _ensureInitializedNotDisposed();

@@ -1,7 +1,7 @@
 package org.uvccamera.flutter;
 
 /**
- * Handle to be notified when the device permission request result is available.
+ * Handler to be notified when the device permission request result is available.
  */
 @FunctionalInterface
 /* package-private */ interface UvcCameraDevicePermissionRequestResultHandler {

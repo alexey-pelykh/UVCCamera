@@ -76,7 +76,10 @@ import io.flutter.plugin.common.MethodChannel;
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-        Log.v(TAG, "onMethodCall: " + call + ", result=" + result);
+        Log.v(TAG, "onMethodCall"
+                + ": call=" + call
+                + ", result=" + result
+        );
 
         switch (call.method) {
             case "isSupported" -> {
@@ -369,6 +372,28 @@ import io.flutter.plugin.common.MethodChannel;
                 }
 
                 result.success(null);
+            }
+            case "takePicture" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.takePicture(
+                            cameraId,
+                            (pictureFile, error) -> mainLooperHandler.post(() -> {
+                                if (error != null) {
+                                    result.error(error.getClass().getSimpleName(), error.getMessage(), null);
+                                } else {
+                                    result.success(pictureFile.getAbsolutePath());
+                                }
+                            })
+                    );
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                }
             }
             case "startVideoRecording" -> {
                 final var cameraId = call.<Integer>argument("cameraId");

@@ -684,6 +684,8 @@ int UVCPreview::setCaptureDisplay(ANativeWindow *capture_window) {
 			// to write frame data to the Surface...
 			// So we need check here.
 			if (mCaptureWindow) {
+				ANativeWindow_setBuffersGeometry(mCaptureWindow,
+					frameWidth, frameHeight, previewFormat);
 				int32_t window_format = ANativeWindow_getFormat(mCaptureWindow);
 				if ((window_format != WINDOW_FORMAT_RGB_565)
 					&& (previewFormat == WINDOW_FORMAT_RGB_565)) {

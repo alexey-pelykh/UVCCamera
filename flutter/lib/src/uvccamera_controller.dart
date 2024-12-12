@@ -20,7 +20,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   final UvcCameraResolutionPreset resolutionPreset;
 
   bool _isDisposed = false;
-  Future<void>? _initializeFuture;
+  Completer<void>? _initializeFuture;
 
   /// Camera ID
   int? _cameraId;
@@ -49,8 +49,11 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       throw Exception('UvcCameraController is disposed');
     }
 
-    final Completer<void> initializeCompleter = Completer<void>();
-    _initializeFuture = initializeCompleter.future;
+    if (_initializeFuture != null) {
+      throw Exception('UvcCameraController initialize already called');
+    }
+
+    _initializeFuture = Completer<void>();
 
     try {
       _cameraId = await UvcCameraPlatformInterface.instance.openCamera(
@@ -69,8 +72,9 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
         device: device,
         previewMode: previewMode,
       );
-    } finally {
-      initializeCompleter.complete();
+      _initializeFuture?.complete();
+    } catch (e) {
+      _initializeFuture?.completeError(e);
     }
   }
 
@@ -83,9 +87,8 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
     _isDisposed = true;
 
-    if (_initializeFuture != null) {
-      await _initializeFuture;
-      _initializeFuture = null;
+    if (_initializeFuture != null && !_initializeFuture!.isCompleted) {
+      await _initializeFuture?.future;
     }
 
     if (_cameraButtonEventStream != null) {
@@ -108,6 +111,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       await UvcCameraPlatformInterface.instance.closeCamera(_cameraId!);
       _cameraId = null;
     }
+    _initializeFuture = null;
   }
 
   /// Returns the camera ID.

@@ -112,56 +112,31 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
   /// Returns the camera ID.
   int get cameraId {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_cameraId == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
     return _cameraId!;
   }
 
   /// Returns the texture ID.
   int get textureId {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_textureId == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
     return _textureId!;
   }
 
   /// Returns a stream of camera status events.
   Stream<UvcCameraStatusEvent> get cameraStatusEvents {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_cameraStatusEventStream == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
     return _cameraStatusEventStream!;
   }
 
   /// Returns a stream of camera button events.
   Stream<UvcCameraButtonEvent> get cameraButtonEvents {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_cameraButtonEventStream == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
     return _cameraButtonEventStream!;
   }
 
   /// Starts video recording.
   Future<void> startVideoRecording(UvcCameraMode videoRecordingMode) async {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_cameraId == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
 
     if (value.isRecordingVideo) {
       throw Exception('UvcCameraController is already recording video');
@@ -181,12 +156,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
   /// Stops video recording.
   Future<XFile> stopVideoRecording() async {
-    if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
-    }
-    if (_cameraId == null) {
-      throw Exception('UvcCameraController is not initialized');
-    }
+    _isInitializedOrDisposed();
 
     if (!value.isRecordingVideo) {
       throw Exception('UvcCameraController is not recording video');
@@ -207,13 +177,16 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
   /// Returns a widget showing a live camera preview.
   Widget buildPreview() {
+    _isInitializedOrDisposed();
+    return Texture(textureId: _textureId!);
+  }
+
+  void _isInitializedOrDisposed() {
     if (_isDisposed) {
       throw Exception('UvcCameraController is disposed');
     }
-    if (_textureId == null) {
+    if (_initializeFuture == null) {
       throw Exception('UvcCameraController is not initialized');
     }
-
-    return Texture(textureId: _textureId!);
   }
 }

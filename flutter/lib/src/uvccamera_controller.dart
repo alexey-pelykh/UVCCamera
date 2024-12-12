@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:flutter/widgets.dart';
 
 import 'uvccamera_button_event.dart';
 import 'uvccamera_controller_state.dart';

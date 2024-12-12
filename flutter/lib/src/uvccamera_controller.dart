@@ -76,8 +76,10 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
         device: device,
         previewMode: previewMode,
       );
-    } finally {
+
       initializeCompleter.complete();
+    } catch (e) {
+      initializeCompleter.completeError(e);
     }
   }
 

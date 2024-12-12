@@ -139,7 +139,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
     _isInitializedOrDisposed();
 
     if (value.isRecordingVideo) {
-      throw Exception('UvcCameraController is already recording video');
+      return;
     }
 
     final XFile videoRecordingFile = await UvcCameraPlatformInterface.instance.startVideoRecording(

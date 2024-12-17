@@ -4,6 +4,10 @@ import 'package:cross_file/cross_file.dart';
 import 'package:flutter/widgets.dart';
 
 import 'uvccamera_button_event.dart';
+import 'uvccamera_controller_disposed_exception.dart';
+import 'uvccamera_controller_illegal_state_exception.dart';
+import 'uvccamera_controller_initialized_exception.dart';
+import 'uvccamera_controller_not_initialized_exception.dart';
 import 'uvccamera_controller_state.dart';
 import 'uvccamera_device.dart';
 import 'uvccamera_mode.dart';
@@ -45,8 +49,11 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
   /// Initializes the controller on the specified device.
   Future<void> _initialize(UvcCameraDevice device) async {
+    if (_initializeFuture != null) {
+      throw UvcCameraControllerInitializedException();
+    }
     if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
+      throw UvcCameraControllerDisposedException();
     }
 
     final Completer<void> initializeCompleter = Completer<void>();
@@ -58,15 +65,11 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
         resolutionPreset,
       );
 
-      _textureId = await UvcCameraPlatformInterface.instance
-          .getCameraTextureId(_cameraId!);
-      final previewMode =
-          await UvcCameraPlatformInterface.instance.getPreviewMode(_cameraId!);
+      _textureId = await UvcCameraPlatformInterface.instance.getCameraTextureId(_cameraId!);
+      final previewMode = await UvcCameraPlatformInterface.instance.getPreviewMode(_cameraId!);
 
-      _cameraStatusEventStream = await UvcCameraPlatformInterface.instance
-          .attachToCameraStatusCallback(_cameraId!);
-      _cameraButtonEventStream = await UvcCameraPlatformInterface.instance
-          .attachToCameraButtonCallback(_cameraId!);
+      _cameraStatusEventStream = await UvcCameraPlatformInterface.instance.attachToCameraStatusCallback(_cameraId!);
+      _cameraButtonEventStream = await UvcCameraPlatformInterface.instance.attachToCameraButtonCallback(_cameraId!);
 
       value = value.copyWith(
         isInitialized: true,
@@ -94,16 +97,14 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
     if (_cameraButtonEventStream != null) {
       if (_cameraId != null) {
-        await UvcCameraPlatformInterface.instance
-            .detachFromCameraButtonCallback(_cameraId!);
+        await UvcCameraPlatformInterface.instance.detachFromCameraButtonCallback(_cameraId!);
       }
       _cameraButtonEventStream = null;
     }
 
     if (_cameraStatusEventStream != null) {
       if (_cameraId != null) {
-        await UvcCameraPlatformInterface.instance
-            .detachFromCameraStatusCallback(_cameraId!);
+        await UvcCameraPlatformInterface.instance.detachFromCameraStatusCallback(_cameraId!);
       }
       _cameraStatusEventStream = null;
     }
@@ -145,11 +146,10 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
     _ensureInitializedNotDisposed();
 
     if (value.isRecordingVideo) {
-      throw Exception('UvcCameraController is already recording video');
+      throw UvcCameraControllerIllegalStateException('UvcCameraController is already recording video');
     }
 
-    final XFile videoRecordingFile =
-        await UvcCameraPlatformInterface.instance.startVideoRecording(
+    final XFile videoRecordingFile = await UvcCameraPlatformInterface.instance.startVideoRecording(
       _cameraId!,
       videoRecordingMode,
     );
@@ -166,7 +166,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
     _ensureInitializedNotDisposed();
 
     if (!value.isRecordingVideo) {
-      throw Exception('UvcCameraController is not recording video');
+      throw UvcCameraControllerIllegalStateException('UvcCameraController is not recording video');
     }
 
     await UvcCameraPlatformInterface.instance.stopVideoRecording(_cameraId!);
@@ -192,10 +192,10 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   /// Ensures that the controller is initialized and not disposed.
   void _ensureInitializedNotDisposed() {
     if (_isDisposed) {
-      throw Exception('UvcCameraController is disposed');
+      throw UvcCameraControllerDisposedException();
     }
     if (_initializeFuture == null) {
-      throw Exception('UvcCameraController is not initialized');
+      throw UvcCameraControllerNotInitializedException();
     }
   }
 }

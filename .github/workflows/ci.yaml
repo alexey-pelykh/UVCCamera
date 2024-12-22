@@ -50,6 +50,12 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}
 
+      - name: Lint Flutter plugin
+        working-directory: flutter
+        run: |
+          dart format --line-length=120 .
+          git diff-index --quiet HEAD -- || (echo "Code is not formatted. Please run 'dart format --line-length=120 .'" && exit 1)
+
       - name: Build
         run: ./gradlew assembleRelease publishToMavenLocal
 

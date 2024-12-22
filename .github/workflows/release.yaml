@@ -68,5 +68,6 @@ jobs:
         working-directory: flutter
         run: |
           sed -i 's/version: 0.0.0-SNAPSHOT/version: ${{ github.ref_name }}/g' pubspec.yaml
+          dart format .  # NOTE: https://github.com/dart-lang/pub-dev/issues/3041
           (cd example && flutter pub get)
           flutter pub publish --force

@@ -163,31 +163,32 @@ public final class USBMonitor {
 	 * @throws IllegalStateException
 	 */
 	public synchronized void register() throws IllegalStateException {
-		if (destroyed) throw new IllegalStateException("already destroyed");
-		if (mPermissionIntent == null) {
-			if (DEBUG) Log.i(TAG, "register:");
-			final Context context = mWeakContext.get();
-			if (context != null) {
-				mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_MUTABLE);
-				final IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-				// ACTION_USB_DEVICE_ATTACHED never comes on some devices so it should not be added here
-				filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-					// For Android 13 (API level 33) and above, use receiver flags
-					context.registerReceiver(mUsbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-				} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-					// For Android 12 (API level 31) and above
-					context.registerReceiver(mUsbReceiver, filter);
-				} else {
-					// For older versions of Android
-					context.registerReceiver(mUsbReceiver, filter);
-				}
-			}
-			// start connection check
-			mDeviceCounts = 0;
-			mAsyncHandler.postDelayed(mDeviceCheckRunnable, 1000);
-		}
+        if (destroyed) throw new IllegalStateException("already destroyed");
+        if (mPermissionIntent == null) {
+            if (DEBUG) Log.i(TAG, "register:");
+            final Context context = mWeakContext.get();
+            if (context != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION),  PendingIntent.FLAG_IMMUTABLE);
+                } else {
+                    mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                }
+                final IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+                // ACTION_USB_DEVICE_ATTACHED never comes on some devices so it should not be added here
+                filter.addAction(ACTION_USB_DEVICE_ATTACHED);
+                filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // For Android 13 (API level 33) and above, use receiver flags
+                    context.registerReceiver(mUsbReceiver, filter, Context.RECEIVER_EXPORTED);
+                } else {
+                    // For Android 12 (API level 31) and above
+                    context.registerReceiver(mUsbReceiver, filter);
+                }
+            }
+            // start connection check
+            mDeviceCounts = 0;
+            mAsyncHandler.postDelayed(mDeviceCheckRunnable, 1000);
+        }
 	}
 
 	/**

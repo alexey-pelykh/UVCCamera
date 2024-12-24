@@ -14,7 +14,7 @@ the original project's forks and PRs.
 
 ## Usage
 
-### Native
+### Android library
 
 The library is available on Maven Central. To use it in your project, add the following dependency:
 
@@ -30,7 +30,7 @@ or to your `build.gradle.kts` file in the `dependencies` block:
 implementation("org.uvccamera:lib:0.1.0")
 ```
 
-### Flutter
+### Flutter plugin
 
 The Flutter plugin is available on [pub.dev](https://pub.dev/packages/uvccamera). To use it in your Flutter project, add
 the following dependency:
@@ -40,7 +40,37 @@ dependencies:
   uvccamera: ^0.1.0
 ```
 
-See the [Flutter example](./flutter/example) for an app that uses the plugin.
+See the [Flutter example](https://pub.dev/packages/uvccamera/example) for an app that uses the plugin.
+
+## Development & Contribution
+
+This section describes how to build the Android library and the Flutter plugin from the source code locally.
+
+### Building Android library
+
+The Android library is built using Gradle. To build the library, run the following command:
+
+```shell
+./gradlew :lib:assembleRelease
+```
+
+There are number of test applications available.
+
+### Building Flutter plugin example
+
+A prerequisite for building the Flutter plugin example locally is to have the Android library built and published to the
+machine's local Maven repository. To publish the library to the local Maven repository, run the following command:
+
+```shell
+./gradlew :lib:publishToMavenLocal
+```
+
+After that, you can build the Flutter plugin example by running the following command:
+
+```shell
+cd flutter/example
+flutter build apk
+```
 
 ## License
 

@@ -99,6 +99,25 @@ jobs:
         working-directory: flutter
         run: |
           sed -i 's/version: 0.0.0-SNAPSHOT/version: ${{ github.ref_name }}/g' pubspec.yaml
-          dart format .  # NOTE: https://github.com/dart-lang/pub-dev/issues/3041
-          (cd example && flutter pub get)
+
+          (cd example \
+            && sed -i 's/uvccamera:/uvccamera: ${{ github.ref_name }}/g' pubspec.yaml \
+            && sed -i '/    path: ..\//d' pubspec.yaml \
+            && flutter pub get \
+            && for EXAMPLE_FILE in pubspec.yaml lib/*.dart; do ( \
+              echo -n "\n## [${EXAMPLE_FILE}](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/${EXAMPLE_FILE})\n" >> README.md \
+              && echo -n "\n\`\`\`${EXAMPLE_FILE##*.}\n" >> README.md \
+              && cat "$EXAMPLE_FILE" >> README.md \
+              && echo -n "\`\`\`\n" >> README.md \
+            ); done \
+          )
+
+          # NOTE: https://github.com/dart-lang/pub-dev/issues/8436
+          (cd example \
+            && mv README.md EXAMPLE.md \
+          )
+
+          # NOTE: https://github.com/dart-lang/pub-dev/issues/3041
+          dart format .
+
           flutter pub publish --force

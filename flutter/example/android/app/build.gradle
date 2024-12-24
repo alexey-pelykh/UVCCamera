@@ -4,6 +4,24 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def getJksFile = {
+    def value = System.getenv("ANDROID_JKS_FILE")
+    if (value != null && !value.isEmpty()) {
+        return value
+    }
+    return null
+}
+def jksFile = getJksFile()
+
+def getJksPassword = {
+    def value = System.getenv("ANDROID_JKS_PASSWORD")
+    if (value != null && !value.isEmpty()) {
+        return value
+    }
+    return null
+}
+def jksPassword = getJksPassword()
+
 android {
     namespace = "org.uvccamera.flutter_example"
     compileSdk = flutter.compileSdkVersion
@@ -26,9 +44,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (jksFile != null && jksPassword != null) {
+            distribution {
+                storeFile file(jksFile)
+                storePassword jksPassword
+                keyAlias "distribution"
+                keyPassword jksPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = jksFile != null && jksPassword != null
+                    ? signingConfigs.distribution
+                    : signingConfigs.debug
         }
     }
 }

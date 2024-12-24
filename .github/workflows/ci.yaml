@@ -50,6 +50,20 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}
 
+      - name: Inflate Keystore
+        env:
+          ANDROID_JKS: ${{ secrets.ANDROID_JKS }}
+          ANDROID_JKS_SHA256: ${{ secrets.ANDROID_JKS_SHA256 }}
+        run: |
+          JKS_FILE="$(mktemp -p "${RUNNER_TEMP}" -d)/android.jks"
+          echo -n "$ANDROID_JKS" | base64 --decode > "$JKS_FILE"
+
+          if [ "${ANDROID_JKS_SHA256} *-" != "$(cat $JKS_FILE | sha256sum -b)" ]; then
+            exit 1
+          fi
+
+          echo "ANDROID_JKS_FILE=$JKS_FILE" >> $GITHUB_ENV
+
       - name: Lint Flutter plugin
         working-directory: flutter
         run: |
@@ -57,6 +71,8 @@ jobs:
           git diff-index --quiet HEAD -- || (echo "Code is not formatted. Please run 'dart format --line-length=120 .'" && exit 1)
 
       - name: Build
+        env:
+          ANDROID_JKS_PASSWORD: ${{ secrets.ANDROID_JKS_PASSWORD }}
         run: ./gradlew assembleRelease publishToMavenLocal
 
       - name: Upload lib artifacts
@@ -67,6 +83,8 @@ jobs:
 
       - name: Build Flutter example
         working-directory: flutter/example
+        env:
+          ANDROID_JKS_PASSWORD: ${{ secrets.ANDROID_JKS_PASSWORD }}
         run: flutter build apk
 
       - name: Upload Flutter example artifacts
@@ -97,6 +115,7 @@ jobs:
       - name: Publish artifacts
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         env:
+          ANDROID_JKS_PASSWORD: ${{ secrets.ANDROID_JKS_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

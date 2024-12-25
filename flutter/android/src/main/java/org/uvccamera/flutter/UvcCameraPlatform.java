@@ -11,7 +11,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
-import android.view.Surface;
 
 import androidx.annotation.NonNull;
 
@@ -32,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.view.TextureRegistry;
 
 /**
@@ -85,11 +83,6 @@ import io.flutter.view.TextureRegistry;
     private final TextureRegistry textureRegistry;
 
     /**
-     * "uvccamera/flutter" method channel
-     */
-    private final MethodChannel flutterMethodChannel;
-
-    /**
      * "uvccamera/device_events" event stream handler
      */
     private final UvcCameraDeviceEventStreamHandler deviceEventStreamHandler;
@@ -131,13 +124,11 @@ import io.flutter.view.TextureRegistry;
             final @NonNull Context applicationContext,
             final @NonNull BinaryMessenger binaryMessenger,
             final @NonNull TextureRegistry textureRegistry,
-            final @NonNull MethodChannel flutterMethodChannel,
             final @NonNull UvcCameraDeviceEventStreamHandler deviceEventStreamHandler
     ) {
         this.applicationContext = new WeakReference<>(applicationContext);
         this.binaryMessenger = new WeakReference<>(binaryMessenger);
         this.textureRegistry = textureRegistry;
-        this.flutterMethodChannel = flutterMethodChannel;
         this.deviceEventStreamHandler = deviceEventStreamHandler;
 
         usbMonitor = new USBMonitor(applicationContext, new UvcCameraDeviceMonitorListener(this));
@@ -427,6 +418,10 @@ import io.flutter.view.TextureRegistry;
         final var desiredFrameSize = supportedSizesWithAreaDelta.get(0).first;
         Log.d(TAG, "openCamera: best size found: " + desiredFrameSize);
 
+        // Set the error callback
+        Log.d(TAG, "openCamera: setting error callback");
+        final var errorCallback = new UvcCameraErrorCallback(this, cameraId);
+
         // Set the status callback
         Log.d(TAG, "openCamera: setting status callback");
         final var statusCallback = new UvcCameraStatusCallback(this, cameraId);
@@ -474,19 +469,28 @@ import io.flutter.view.TextureRegistry;
         Log.d(TAG, "openCamera: preview size and frame format set: frameFormat=" + frameFormat);
 
         // Set the preview display surface and start the preview
-        Log.d(TAG, "openCamera: setting preview texture and starting preview");
-        final var cameraTexture = textureRegistry.createSurfaceTexture();
-        final var cameraSurface = new Surface(cameraTexture.surfaceTexture());
+        Log.d(TAG, "openCamera: setting preview surface and starting preview");
+        final var cameraSurfaceProducer = textureRegistry.createSurfaceProducer();
+        cameraSurfaceProducer.setSize(desiredFrameSize.width, desiredFrameSize.height);
+        cameraSurfaceProducer.setCallback(errorCallback.textureRegistrySurfaceProducerCallback);
+        final var cameraSurface = cameraSurfaceProducer.getSurface();
         try {
             camera.setPreviewDisplay(cameraSurface);
             camera.startPreview();
         } catch (final Exception e) {
             camera.close();
             camera.destroy();
-            cameraSurface.release();
-            cameraTexture.release();
+            cameraSurfaceProducer.release();
             throw new IllegalStateException("Failed to start preview", e);
         }
+
+        // Create the error event channel
+        final var errorEventChannel = new EventChannel(
+                binaryMessenger,
+                "uvccamera/camera@" + cameraId + "/error_events"
+        );
+        final var errorEventStreamHandler = new UvcCameraErrorEventStreamHandler();
+        errorEventChannel.setStreamHandler(errorEventStreamHandler);
 
         // Create the status event channel
         final var statusEventChannel = new EventChannel(
@@ -508,9 +512,12 @@ import io.flutter.view.TextureRegistry;
 
         camerasResources.put(cameraId, new UvcCameraResources(
                 cameraId,
-                cameraTexture,
+                cameraSurfaceProducer,
                 cameraSurface,
                 camera,
+                errorEventChannel,
+                errorEventStreamHandler,
+                errorCallback,
                 statusEventChannel,
                 statusEventStreamHandler,
                 statusCallback,
@@ -536,8 +543,9 @@ import io.flutter.view.TextureRegistry;
             throw new IllegalArgumentException("Camera resources not found: " + cameraId);
         }
 
-        cameraResources.statusEventChannel().setStreamHandler(null);
         cameraResources.buttonEventChannel().setStreamHandler(null);
+        cameraResources.statusEventChannel().setStreamHandler(null);
+        cameraResources.errorEventChannel().setStreamHandler(null);
 
         Log.d(TAG, "closeCamera: releasing media recorder");
         try {
@@ -589,6 +597,14 @@ import io.flutter.view.TextureRegistry;
             Log.w(TAG, "closeCamera: failed to destroy camera", e);
         }
 
+        Log.d(TAG, "closeCamera: unsetting camera surface producer callback");
+        try {
+            cameraResources.surfaceSurfaceProducer().setCallback(null);
+            Log.d(TAG, "closeCamera: camera surface producer callback unset");
+        } catch (final Exception e) {
+            Log.w(TAG, "closeCamera: failed to unset camera surface producer callback", e);
+        }
+
         Log.d(TAG, "closeCamera: releasing camera surface");
         try {
             cameraResources.surface().release();
@@ -597,12 +613,12 @@ import io.flutter.view.TextureRegistry;
             Log.w(TAG, "closeCamera: failed to release camera surface", e);
         }
 
-        Log.d(TAG, "closeCamera: releasing camera texture");
+        Log.d(TAG, "closeCamera: releasing camera surface producer");
         try {
-            cameraResources.surfaceTextureEntry().release();
-            Log.d(TAG, "closeCamera: camera texture released");
+            cameraResources.surfaceSurfaceProducer().release();
+            Log.d(TAG, "closeCamera: camera surface producer released");
         } catch (final Exception e) {
-            Log.w(TAG, "closeCamera: failed to release camera texture", e);
+            Log.w(TAG, "closeCamera: failed to release camera surface producer", e);
         }
     }
 
@@ -613,14 +629,86 @@ import io.flutter.view.TextureRegistry;
      * @return the camera texture ID
      */
     public long getCameraTextureId(final int cameraId) {
-        Log.v(TAG, "getCameraTextureId: cameraId=" + cameraId);
+        Log.v(TAG, "getCameraTextureId"
+                + ": cameraId=" + cameraId
+        );
 
         final var cameraResources = camerasResources.get(cameraId);
         if (cameraResources == null) {
             throw new IllegalArgumentException("Camera resources not found: " + cameraId);
         }
 
-        return cameraResources.surfaceTextureEntry().id();
+        return cameraResources.surfaceSurfaceProducer().id();
+    }
+
+    /**
+     * Casts the camera error event
+     *
+     * @param cameraId the camera ID
+     * @param type     the error type
+     * @param reason   the error reason
+     */
+    /* package-private */ void castCameraErrorEvent(final int cameraId, final String type, final String reason) {
+        Log.v(TAG, "castCameraErrorEvent"
+                + ": cameraId=" + cameraId
+                + ", type=" + type
+                + ", reason=" + reason
+        );
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        final var eventSink = cameraResources.errorEventStreamHandler().getEventSink();
+        if (eventSink == null) {
+            Log.w(TAG, "castCameraErrorEvent: event sink not found");
+            return;
+        }
+
+        final var eventMap = Map.of(
+                "cameraId", cameraId,
+                "error", Map.of(
+                        "type", type,
+                        "reason", reason
+                )
+        );
+
+        mainLooperHandler.post(
+                () -> eventSink.success(eventMap)
+        );
+    }
+
+    /**
+     * Attaches to the camera error callback
+     *
+     * @param cameraId the camera ID
+     */
+    public void attachToCameraErrorCallback(final int cameraId) {
+        Log.v(TAG, "attachToCameraErrorCallback: cameraId=" + cameraId);
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        cameraResources.errorCallback().enableEventsCasting();
+    }
+
+    /**
+     * Detaches from the camera error callback
+     *
+     * @param cameraId the camera ID
+     */
+    public void detachFromCameraErrorCallback(final int cameraId) {
+        Log.v(TAG, "detachFromCameraErrorCallback: cameraId=" + cameraId);
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        cameraResources.errorCallback().disableEventsCasting();
     }
 
     /**

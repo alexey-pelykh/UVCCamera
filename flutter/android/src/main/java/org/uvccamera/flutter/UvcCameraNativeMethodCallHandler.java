@@ -199,6 +199,38 @@ import io.flutter.plugin.common.MethodChannel;
 
                 result.success(textureId);
             }
+            case "attachToCameraErrorCallback" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.attachToCameraErrorCallback(cameraId);
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(null);
+            }
+            case "detachFromCameraErrorCallback" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.detachFromCameraErrorCallback(cameraId);
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(null);
+            }
             case "attachToCameraStatusCallback" -> {
                 final var cameraId = call.<Integer>argument("cameraId");
                 if (cameraId == null) {

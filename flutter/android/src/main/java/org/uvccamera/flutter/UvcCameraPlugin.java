@@ -46,14 +46,12 @@ public class UvcCameraPlugin implements FlutterPlugin, ActivityAware {
         nativeMethodChannel = new MethodChannel(binaryMessenger, "uvccamera/native");
         deviceEventChannel = new EventChannel(binaryMessenger, "uvccamera/device_events");
 
-        final var flutterMethodChannel = new MethodChannel(binaryMessenger, "uvccamera/flutter");
         final var deviceEventChannelStreamHandler = new UvcCameraDeviceEventStreamHandler();
 
         uvcCameraPlatform = new UvcCameraPlatform(
                 applicationContext,
                 binaryMessenger,
                 textureRegistry,
-                flutterMethodChannel,
                 deviceEventChannelStreamHandler
         );
 

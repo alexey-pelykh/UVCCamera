@@ -13,9 +13,12 @@ import io.flutter.view.TextureRegistry;
  */
 /* package-private */ record UvcCameraResources(
         int cameraId,
-        TextureRegistry.SurfaceTextureEntry surfaceTextureEntry,
+        TextureRegistry.SurfaceProducer surfaceSurfaceProducer,
         Surface surface,
         UVCCamera camera,
+        EventChannel errorEventChannel,
+        UvcCameraErrorEventStreamHandler errorEventStreamHandler,
+        UvcCameraErrorCallback errorCallback,
         EventChannel statusEventChannel,
         UvcCameraStatusEventStreamHandler statusEventStreamHandler,
         UvcCameraStatusCallback statusCallback,

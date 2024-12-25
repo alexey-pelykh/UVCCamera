@@ -14,13 +14,15 @@ class UvcCameraWidget extends StatefulWidget {
   State<UvcCameraWidget> createState() => _UvcCameraWidgetState();
 }
 
-class _UvcCameraWidgetState extends State<UvcCameraWidget> {
+class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingObserver {
+  bool _isAttached = false;
   bool _hasDevicePermission = false;
   bool _hasCameraPermission = false;
   bool _isDeviceAttached = false;
   bool _isDeviceConnected = false;
   UvcCameraController? _cameraController;
   Future<void>? _cameraControllerInitializeFuture;
+  StreamSubscription<UvcCameraErrorEvent>? _errorEventSubscription;
   StreamSubscription<UvcCameraStatusEvent>? _statusEventSubscription;
   StreamSubscription<UvcCameraButtonEvent>? _buttonEventSubscription;
   StreamSubscription<UvcCameraDeviceEvent>? _deviceEventSubscription;
@@ -29,6 +31,34 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _attach();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+
+    _detach(force: true);
+
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _attach();
+    } else if (state == AppLifecycleState.paused) {
+      _detach();
+    }
+  }
+
+  void _attach({bool force = false}) {
+    if (_isAttached && !force) {
+      return;
+    }
 
     UvcCamera.getDevices().then((devices) {
       if (!devices.containsKey(widget.device.name)) {
@@ -75,6 +105,17 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
             device: widget.device,
           );
           _cameraControllerInitializeFuture = _cameraController!.initialize().then((_) async {
+            _errorEventSubscription = _cameraController!.cameraErrorEvents.listen((event) {
+              setState(() {
+                _log = 'error: ${event.error}\n$_log';
+              });
+
+              if (event.error.type == UvcCameraErrorType.previewInterrupted) {
+                _detach();
+                _attach();
+              }
+            });
+
             _statusEventSubscription = _cameraController!.cameraStatusEvents.listen((event) {
               setState(() {
                 _log = 'status: ${event.payload}\n$_log';
@@ -99,6 +140,9 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
           _statusEventSubscription?.cancel();
           _statusEventSubscription = null;
 
+          _errorEventSubscription?.cancel();
+          _errorEventSubscription = null;
+
           _cameraController?.dispose();
           _cameraController = null;
           _cameraControllerInitializeFuture = null;
@@ -107,17 +151,34 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
         }
       });
     });
+
+    _isAttached = true;
   }
 
-  @override
-  void dispose() {
+  void _detach({bool force = false}) {
+    if (!_isAttached && !force) {
+      return;
+    }
+
+    _hasDevicePermission = false;
+    _hasCameraPermission = false;
+    _isDeviceAttached = false;
+    _isDeviceConnected = false;
+
+    _buttonEventSubscription?.cancel();
+    _buttonEventSubscription = null;
+
+    _statusEventSubscription?.cancel();
+    _statusEventSubscription = null;
+
     _cameraController?.dispose();
     _cameraController = null;
+    _cameraControllerInitializeFuture = null;
 
     _deviceEventSubscription?.cancel();
     _deviceEventSubscription = null;
 
-    super.dispose();
+    _isAttached = false;
   }
 
   Future<void> _requestPermissions() async {
@@ -229,17 +290,20 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> {
         if (snapshot.connectionState == ConnectionState.done) {
           return Stack(
             children: [
-              UvcCameraPreview(
-                _cameraController!,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      _log,
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontFamily: 'Courier',
-                        fontSize: 10.0,
+              Align(
+                alignment: Alignment.topCenter,
+                child: UvcCameraPreview(
+                  _cameraController!,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        _log,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontFamily: 'Courier',
+                          fontSize: 10.0,
+                        ),
                       ),
                     ),
                   ),

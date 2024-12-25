@@ -10,6 +10,7 @@ import 'uvccamera_controller_initialized_exception.dart';
 import 'uvccamera_controller_not_initialized_exception.dart';
 import 'uvccamera_controller_state.dart';
 import 'uvccamera_device.dart';
+import 'uvccamera_error_event.dart';
 import 'uvccamera_mode.dart';
 import 'uvccamera_platform_interface.dart';
 import 'uvccamera_resolution_preset.dart';
@@ -31,6 +32,9 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
   /// Texture ID
   int? _textureId;
+
+  /// Stream of camera error events.
+  Stream<UvcCameraErrorEvent>? _cameraErrorEventStream;
 
   /// Stream of camera status events.
   Stream<UvcCameraStatusEvent>? _cameraStatusEventStream;
@@ -68,6 +72,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       _textureId = await UvcCameraPlatformInterface.instance.getCameraTextureId(_cameraId!);
       final previewMode = await UvcCameraPlatformInterface.instance.getPreviewMode(_cameraId!);
 
+      _cameraErrorEventStream = await UvcCameraPlatformInterface.instance.attachToCameraErrorCallback(_cameraId!);
       _cameraStatusEventStream = await UvcCameraPlatformInterface.instance.attachToCameraStatusCallback(_cameraId!);
       _cameraButtonEventStream = await UvcCameraPlatformInterface.instance.attachToCameraButtonCallback(_cameraId!);
 
@@ -111,6 +116,13 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       _cameraStatusEventStream = null;
     }
 
+    if (_cameraErrorEventStream != null) {
+      if (_cameraId != null) {
+        await UvcCameraPlatformInterface.instance.detachFromCameraErrorCallback(_cameraId!);
+      }
+      _cameraErrorEventStream = null;
+    }
+
     _textureId = null;
 
     if (_cameraId != null) {
@@ -129,6 +141,12 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   int get textureId {
     _ensureInitializedNotDisposed();
     return _textureId!;
+  }
+
+  /// Returns a stream of camera error events.
+  Stream<UvcCameraErrorEvent> get cameraErrorEvents {
+    _ensureInitializedNotDisposed();
+    return _cameraErrorEventStream!;
   }
 
   /// Returns a stream of camera status events.

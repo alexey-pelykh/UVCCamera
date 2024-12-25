@@ -4,6 +4,7 @@ import 'package:cross_file/cross_file.dart';
 import 'uvccamera_button_event.dart';
 import 'uvccamera_device.dart';
 import 'uvccamera_device_event.dart';
+import 'uvccamera_error_event.dart';
 import 'uvccamera_platform.dart';
 import 'uvccamera_mode.dart';
 import 'uvccamera_resolution_preset.dart';
@@ -44,6 +45,14 @@ abstract class UvcCameraPlatformInterface extends PlatformInterface {
 
   Future<int> getCameraTextureId(int cameraId) {
     throw UnimplementedError('getCameraTextureId() has not been implemented.');
+  }
+
+  Future<Stream<UvcCameraErrorEvent>> attachToCameraErrorCallback(int cameraId) {
+    throw UnimplementedError('attachToCameraErrorCallback() has not been implemented.');
+  }
+
+  Future<void> detachFromCameraErrorCallback(int cameraId) {
+    throw UnimplementedError('detachFromCameraErrorCallback() has not been implemented.');
   }
 
   Future<Stream<UvcCameraStatusEvent>> attachToCameraStatusCallback(int cameraId) {

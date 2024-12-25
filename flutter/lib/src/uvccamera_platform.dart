@@ -4,6 +4,7 @@ import 'package:cross_file/cross_file.dart';
 import 'uvccamera_button_event.dart';
 import 'uvccamera_device.dart';
 import 'uvccamera_device_event.dart';
+import 'uvccamera_error_event.dart';
 import 'uvccamera_mode.dart';
 import 'uvccamera_platform_interface.dart';
 import 'uvccamera_resolution_preset.dart';
@@ -11,20 +12,18 @@ import 'uvccamera_status_event.dart';
 
 class UvcCameraPlatform extends UvcCameraPlatformInterface {
   final _nativeMethodChannel = const MethodChannel('uvccamera/native');
-  final _flutterMethodChannel = const MethodChannel('uvccamera/flutter');
 
   final EventChannel _deviceEventChannel = EventChannel('uvccamera/device_events');
   Stream<UvcCameraDeviceEvent>? _deviceEventStream;
+
+  final Map<int, EventChannel> _errorEventChannels = {};
+  final Map<int, Stream<UvcCameraErrorEvent>> _errorEventStreams = {};
 
   final Map<int, EventChannel> _statusEventChannels = {};
   final Map<int, Stream<UvcCameraStatusEvent>> _statusEventStreams = {};
 
   final Map<int, EventChannel> _buttonEventChannels = {};
   final Map<int, Stream<UvcCameraButtonEvent>> _buttonEventStreams = {};
-
-  UvcCameraPlatform() : super() {
-    _flutterMethodChannel.setMethodCallHandler(_flutterMethodCallHandler);
-  }
 
   @override
   Future<bool> isSupported() async {
@@ -108,6 +107,33 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       );
     }
     return result;
+  }
+
+  @override
+  Future<Stream<UvcCameraErrorEvent>> attachToCameraErrorCallback(int cameraId) async {
+    final errorEventChannel = EventChannel('uvccamera/camera@$cameraId/error_events');
+    final errorEventStream = errorEventChannel.receiveBroadcastStream().map((event) {
+      return UvcCameraErrorEvent.fromMap(event);
+    });
+
+    await _nativeMethodChannel.invokeMethod<void>('attachToCameraErrorCallback', {
+      'cameraId': cameraId,
+    });
+
+    _errorEventChannels[cameraId] = errorEventChannel;
+    _errorEventStreams[cameraId] = errorEventStream;
+
+    return errorEventStream;
+  }
+
+  @override
+  Future<void> detachFromCameraErrorCallback(int cameraId) async {
+    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraErrorCallback', {
+      'cameraId': cameraId,
+    });
+
+    _errorEventChannels.remove(cameraId);
+    _errorEventStreams.remove(cameraId);
   }
 
   @override
@@ -247,9 +273,5 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
     return _deviceEventStream ??= _deviceEventChannel.receiveBroadcastStream().map((event) {
       return UvcCameraDeviceEvent.fromMap(event);
     });
-  }
-
-  Future<void> _flutterMethodCallHandler(MethodCall call) async {
-    throw UnimplementedError('Method ${call.method} not implemented');
   }
 }

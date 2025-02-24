@@ -9,11 +9,7 @@ class UvcCameraMode extends Equatable {
   final int frameHeight;
   final UvcCameraFrameFormat frameFormat;
 
-  const UvcCameraMode({
-    required this.frameWidth,
-    required this.frameHeight,
-    required this.frameFormat,
-  });
+  const UvcCameraMode({required this.frameWidth, required this.frameHeight, required this.frameFormat});
 
   /// The aspect ratio of the camera mode.
   double get aspectRatio => frameWidth / frameHeight;
@@ -27,17 +23,9 @@ class UvcCameraMode extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'frameWidth': frameWidth,
-      'frameHeight': frameHeight,
-      'frameFormat': frameFormat.name,
-    };
+    return {'frameWidth': frameWidth, 'frameHeight': frameHeight, 'frameFormat': frameFormat.name};
   }
 
   @override
-  List<Object?> get props => [
-        frameWidth,
-        frameHeight,
-        frameFormat,
-      ];
+  List<Object?> get props => [frameWidth, frameHeight, frameFormat];
 }

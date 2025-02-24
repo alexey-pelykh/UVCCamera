@@ -1,3 +1,1 @@
-enum UvcCameraErrorType {
-  previewInterrupted,
-}
+enum UvcCameraErrorType { previewInterrupted }

@@ -55,39 +55,25 @@ class _UvcCameraDevicesScreenState extends State<UvcCameraDevicesScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_isSupported) {
-      return const Center(
-        child: Text(
-          'UVC Camera is not supported on this device.',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return const Center(child: Text('UVC Camera is not supported on this device.', style: TextStyle(fontSize: 18)));
     }
 
     if (_devices.isEmpty) {
-      return const Center(
-        child: Text(
-          'No UVC devices connected.',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return const Center(child: Text('No UVC devices connected.', style: TextStyle(fontSize: 18)));
     }
 
     return ListView(
-      children: _devices.values.map((device) {
-        return ListTile(
-          leading: const Icon(Icons.videocam),
-          title: Text(device.name),
-          subtitle: Text('Vendor ID: ${device.vendorId}, Product ID: ${device.productId}'),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UvcCameraDeviceScreen(device: device),
-              ),
+      children:
+          _devices.values.map((device) {
+            return ListTile(
+              leading: const Icon(Icons.videocam),
+              title: Text(device.name),
+              subtitle: Text('Vendor ID: ${device.vendorId}, Product ID: ${device.productId}'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => UvcCameraDeviceScreen(device: device)));
+              },
             );
-          },
-        );
-      }).toList(),
+          }).toList(),
     );
   }
 }

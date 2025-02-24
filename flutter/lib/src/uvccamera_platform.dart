@@ -29,10 +29,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
   Future<bool> isSupported() async {
     final result = await _nativeMethodChannel.invokeMethod<bool>('isSupported');
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to determine if UVC camera is supported',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to determine if UVC camera is supported');
     }
     return result;
   }
@@ -42,10 +39,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
     final result = _nativeMethodChannel.invokeMethod<Map>('getDevices');
     return result.then((value) {
       if (value == null) {
-        throw PlatformException(
-          code: 'UNKNOWN',
-          message: 'Unable to get UVC camera devices',
-        );
+        throw PlatformException(code: 'UNKNOWN', message: 'Unable to get UVC camera devices');
       }
       return value.map((key, value) {
         return MapEntry(key, UvcCameraDevice.fromMap(value));
@@ -59,10 +53,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       'deviceName': device.name,
     });
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to request device permission for device: $device',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to request device permission for device: $device');
     }
     return result;
   }
@@ -74,10 +65,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       'resolutionPreset': resolutionPreset.name,
     });
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to open camera for device: $device',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to open camera for device: $device');
     }
     return result;
   }
@@ -90,21 +78,14 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
     _buttonEventChannels.remove(cameraId);
     _buttonEventStreams.remove(cameraId);
 
-    await _nativeMethodChannel.invokeMethod<void>('closeCamera', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('closeCamera', {'cameraId': cameraId});
   }
 
   @override
   Future<int> getCameraTextureId(int cameraId) async {
-    final result = await _nativeMethodChannel.invokeMethod<int>('getCameraTextureId', {
-      'cameraId': cameraId,
-    });
+    final result = await _nativeMethodChannel.invokeMethod<int>('getCameraTextureId', {'cameraId': cameraId});
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to get camera texture id for camera: $cameraId',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to get camera texture id for camera: $cameraId');
     }
     return result;
   }
@@ -116,9 +97,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       return UvcCameraErrorEvent.fromMap(event);
     });
 
-    await _nativeMethodChannel.invokeMethod<void>('attachToCameraErrorCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('attachToCameraErrorCallback', {'cameraId': cameraId});
 
     _errorEventChannels[cameraId] = errorEventChannel;
     _errorEventStreams[cameraId] = errorEventStream;
@@ -128,9 +107,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<void> detachFromCameraErrorCallback(int cameraId) async {
-    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraErrorCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraErrorCallback', {'cameraId': cameraId});
 
     _errorEventChannels.remove(cameraId);
     _errorEventStreams.remove(cameraId);
@@ -143,9 +120,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       return UvcCameraStatusEvent.fromMap(event);
     });
 
-    await _nativeMethodChannel.invokeMethod<void>('attachToCameraStatusCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('attachToCameraStatusCallback', {'cameraId': cameraId});
 
     _statusEventChannels[cameraId] = statusEventChannel;
     _statusEventStreams[cameraId] = statusEventStream;
@@ -155,9 +130,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<void> detachFromCameraStatusCallback(int cameraId) async {
-    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraStatusCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraStatusCallback', {'cameraId': cameraId});
 
     _statusEventChannels.remove(cameraId);
     _statusEventStreams.remove(cameraId);
@@ -170,9 +143,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
       return UvcCameraButtonEvent.fromMap(event);
     });
 
-    await _nativeMethodChannel.invokeMethod<void>('attachToCameraButtonCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('attachToCameraButtonCallback', {'cameraId': cameraId});
 
     _buttonEventChannels[cameraId] = buttonEventChannel;
     _buttonEventStreams[cameraId] = buttonEventStream;
@@ -182,9 +153,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<void> detachFromCameraButtonCallback(int cameraId) async {
-    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraButtonCallback', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraButtonCallback', {'cameraId': cameraId});
 
     _buttonEventChannels.remove(cameraId);
     _buttonEventStreams.remove(cameraId);
@@ -192,14 +161,9 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<List<UvcCameraMode>> getSupportedModes(int cameraId) async {
-    final result = await _nativeMethodChannel.invokeMethod<List>('getSupportedModes', {
-      'cameraId': cameraId,
-    });
+    final result = await _nativeMethodChannel.invokeMethod<List>('getSupportedModes', {'cameraId': cameraId});
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to get supported modes for camera: $cameraId',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to get supported modes for camera: $cameraId');
     }
     return result.map((value) {
       return UvcCameraMode.fromMap(value);
@@ -208,14 +172,9 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<UvcCameraMode> getPreviewMode(int cameraId) async {
-    final result = await _nativeMethodChannel.invokeMethod<Map>('getPreviewMode', {
-      'cameraId': cameraId,
-    });
+    final result = await _nativeMethodChannel.invokeMethod<Map>('getPreviewMode', {'cameraId': cameraId});
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to get preview mode for camera: $cameraId',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to get preview mode for camera: $cameraId');
     }
     return UvcCameraMode.fromMap(result);
   }
@@ -230,15 +189,10 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<XFile> takePicture(int cameraId) async {
-    final result = await _nativeMethodChannel.invokeMethod<String>('takePicture', {
-      'cameraId': cameraId,
-    });
+    final result = await _nativeMethodChannel.invokeMethod<String>('takePicture', {'cameraId': cameraId});
 
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to take picture for camera: $cameraId',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to take picture for camera: $cameraId');
     }
 
     return XFile(result);
@@ -252,10 +206,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
     });
 
     if (result == null) {
-      throw PlatformException(
-        code: 'UNKNOWN',
-        message: 'Unable to start video recording for camera: $cameraId',
-      );
+      throw PlatformException(code: 'UNKNOWN', message: 'Unable to start video recording for camera: $cameraId');
     }
 
     return XFile(result);
@@ -263,9 +214,7 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   @override
   Future<void> stopVideoRecording(int cameraId) async {
-    await _nativeMethodChannel.invokeMethod<void>('stopVideoRecording', {
-      'cameraId': cameraId,
-    });
+    await _nativeMethodChannel.invokeMethod<void>('stopVideoRecording', {'cameraId': cameraId});
   }
 
   @override

@@ -14,12 +14,7 @@ class _UvcCameraDemoAppState extends State<UvcCameraDemoApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UVC Camera Example',
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('UVC Camera Example'),
-        ),
-        body: UvcCameraDevicesScreen(),
-      ),
+      home: Scaffold(appBar: AppBar(title: const Text('UVC Camera Example')), body: UvcCameraDevicesScreen()),
     );
   }
 }

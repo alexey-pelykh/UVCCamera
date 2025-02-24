@@ -10,13 +10,6 @@ class UvcCameraDeviceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(device.name),
-      ),
-      body: Center(
-        child: UvcCameraWidget(device: device),
-      ),
-    );
+    return Scaffold(appBar: AppBar(title: Text(device.name)), body: Center(child: UvcCameraWidget(device: device)));
   }
 }

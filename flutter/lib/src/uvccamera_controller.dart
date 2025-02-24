@@ -43,10 +43,8 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   Stream<UvcCameraButtonEvent>? _cameraButtonEventStream;
 
   /// Creates a new [UvcCameraController] object.
-  UvcCameraController({
-    required this.device,
-    this.resolutionPreset = UvcCameraResolutionPreset.max,
-  }) : super(UvcCameraControllerState.uninitialized(device));
+  UvcCameraController({required this.device, this.resolutionPreset = UvcCameraResolutionPreset.max})
+    : super(UvcCameraControllerState.uninitialized(device));
 
   /// Initializes the controller on the device.
   Future<void> initialize() => _initialize(device);
@@ -64,10 +62,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
     _initializeFuture = initializeCompleter.future;
 
     try {
-      _cameraId = await UvcCameraPlatformInterface.instance.openCamera(
-        device,
-        resolutionPreset,
-      );
+      _cameraId = await UvcCameraPlatformInterface.instance.openCamera(device, resolutionPreset);
 
       _textureId = await UvcCameraPlatformInterface.instance.getCameraTextureId(_cameraId!);
       final previewMode = await UvcCameraPlatformInterface.instance.getPreviewMode(_cameraId!);
@@ -76,11 +71,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       _cameraStatusEventStream = await UvcCameraPlatformInterface.instance.attachToCameraStatusCallback(_cameraId!);
       _cameraButtonEventStream = await UvcCameraPlatformInterface.instance.attachToCameraButtonCallback(_cameraId!);
 
-      value = value.copyWith(
-        isInitialized: true,
-        device: device,
-        previewMode: previewMode,
-      );
+      value = value.copyWith(isInitialized: true, device: device, previewMode: previewMode);
 
       initializeCompleter.complete();
     } catch (e) {
@@ -165,9 +156,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   Future<XFile> takePicture() async {
     _ensureInitializedNotDisposed();
 
-    final XFile pictureFile = await UvcCameraPlatformInterface.instance.takePicture(
-      _cameraId!,
-    );
+    final XFile pictureFile = await UvcCameraPlatformInterface.instance.takePicture(_cameraId!);
 
     return pictureFile;
   }
@@ -204,11 +193,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
 
     final XFile videoRecordingFile = value.videoRecordingFile!;
 
-    value = value.copyWith(
-      isRecordingVideo: false,
-      videoRecordingMode: null,
-      videoRecordingFile: null,
-    );
+    value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
 
     return videoRecordingFile;
   }

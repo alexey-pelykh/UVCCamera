@@ -8,10 +8,7 @@ class UvcCameraStatusEvent extends Equatable {
   final int cameraId;
   final UvcCameraStatus payload;
 
-  const UvcCameraStatusEvent({
-    required this.cameraId,
-    required this.payload,
-  });
+  const UvcCameraStatusEvent({required this.cameraId, required this.payload});
 
   factory UvcCameraStatusEvent.fromMap(Map<dynamic, dynamic> map) {
     return UvcCameraStatusEvent(
@@ -21,15 +18,9 @@ class UvcCameraStatusEvent extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'cameraId': cameraId,
-      'payload': payload.toMap(),
-    };
+    return {'cameraId': cameraId, 'payload': payload.toMap()};
   }
 
   @override
-  List<Object?> get props => [
-        cameraId,
-        payload,
-      ];
+  List<Object?> get props => [cameraId, payload];
 }

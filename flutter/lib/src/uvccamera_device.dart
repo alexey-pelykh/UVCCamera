@@ -38,11 +38,5 @@ class UvcCameraDevice extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-        name,
-        deviceClass,
-        deviceSubclass,
-        vendorId,
-        productId,
-      ];
+  List<Object?> get props => [name, deviceClass, deviceSubclass, vendorId, productId];
 }

@@ -9,10 +9,7 @@ class UvcCameraErrorEvent extends Equatable {
   final int cameraId;
   final UvcCameraError error;
 
-  const UvcCameraErrorEvent({
-    required this.cameraId,
-    required this.error,
-  });
+  const UvcCameraErrorEvent({required this.cameraId, required this.error});
 
   factory UvcCameraErrorEvent.fromMap(Map<dynamic, dynamic> map) {
     return UvcCameraErrorEvent(
@@ -22,15 +19,9 @@ class UvcCameraErrorEvent extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'cameraId': cameraId,
-      'error': error.toMap(),
-    };
+    return {'cameraId': cameraId, 'error': error.toMap()};
   }
 
   @override
-  List<Object?> get props => [
-        cameraId,
-        error,
-      ];
+  List<Object?> get props => [cameraId, error];
 }

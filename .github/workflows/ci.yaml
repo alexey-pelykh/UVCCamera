@@ -40,6 +40,8 @@ jobs:
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v3
+        with:
+          version: 3.29.0
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -49,6 +51,18 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}
+
+      - name: Get pub cache location
+        id: get-pub-cache
+        shell: bash
+        run: |
+          echo "pub_cache=$PUB_CACHE" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Pub
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.get-pub-cache.outputs.pub_cache }}
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
 
       - name: Inflate Keystore
         env:
@@ -64,11 +78,26 @@ jobs:
 
           echo "ANDROID_JKS_FILE=$JKS_FILE" >> $GITHUB_ENV
 
+      - name: Flutter plugin dependencies
+        working-directory: flutter
+        run: |
+          flutter pub get \
+          || exit $?
+
+      - name: Analyze Flutter plugin
+        working-directory: flutter
+        run: |
+          flutter analyze \
+            --no-pub \
+          || exit $?
+
       - name: Lint Flutter plugin
         working-directory: flutter
         run: |
-          dart format --line-length=120 .
-          git diff-index --quiet HEAD -- || (echo "Code is not formatted. Please run 'dart format --line-length=120 .'" && exit 1)
+          dart format \
+            --set-exit-if-changed \
+            . \
+          || exit $?
 
       - name: Build
         env:

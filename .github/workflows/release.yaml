@@ -35,6 +35,8 @@ jobs:
 
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v3
+        with:
+          version: 3.29.0
 
       - name: Setup pub.dev credentials
         uses: flutter-actions/setup-pubdev-credentials@v1
@@ -47,6 +49,18 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}
+
+      - name: Get pub cache location
+        id: get-pub-cache
+        shell: bash
+        run: |
+          echo "pub_cache=$PUB_CACHE" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Pub
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.get-pub-cache.outputs.pub_cache }}
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
 
       - name: Inflate Keystore
         env:
@@ -116,8 +130,5 @@ jobs:
           (cd example \
             && mv README.md example.md \
           )
-
-          # NOTE: https://github.com/dart-lang/pub-dev/issues/3041
-          dart format .
 
           flutter pub publish --force

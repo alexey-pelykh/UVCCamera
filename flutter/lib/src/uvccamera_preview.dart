@@ -21,13 +21,7 @@ class UvcCameraPreview extends StatelessWidget {
       builder: (BuildContext context, Object? value, Widget? child) {
         return AspectRatio(
           aspectRatio: controller.value.previewMode!.aspectRatio,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              controller.buildPreview(),
-              child ?? Container(),
-            ],
-          ),
+          child: Stack(fit: StackFit.expand, children: <Widget>[controller.buildPreview(), child ?? Container()]),
         );
       },
       child: child,

@@ -39,14 +39,14 @@ class UvcCameraControllerState {
 
   /// Creates a [UvcCameraControllerState] object for an uninitialized controller.
   const UvcCameraControllerState.uninitialized(UvcCameraDevice device)
-      : this(
-          isInitialized: false,
-          device: device,
-          previewMode: null,
-          isRecordingVideo: false,
-          videoRecordingMode: null,
-          videoRecordingFile: null,
-        );
+    : this(
+        isInitialized: false,
+        device: device,
+        previewMode: null,
+        isRecordingVideo: false,
+        videoRecordingMode: null,
+        videoRecordingFile: null,
+      );
 
   /// Creates a modified copy of this object.
   ///

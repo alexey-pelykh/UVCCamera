@@ -3,7 +3,7 @@ description: "Demonstrates how to use the uvccamera plugin."
 publish_to: none
 
 environment:
-  sdk: ^3.5.4
+  sdk: ^3.7.0
 
 dependencies:
   flutter:

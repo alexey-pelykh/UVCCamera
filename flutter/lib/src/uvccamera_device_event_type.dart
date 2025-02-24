@@ -1,6 +1,1 @@
-enum UvcCameraDeviceEventType {
-  attached,
-  detached,
-  connected,
-  disconnected,
-}
+enum UvcCameraDeviceEventType { attached, detached, connected, disconnected }

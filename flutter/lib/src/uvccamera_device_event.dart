@@ -9,10 +9,7 @@ class UvcCameraDeviceEvent extends Equatable {
   final UvcCameraDevice device;
   final UvcCameraDeviceEventType type;
 
-  const UvcCameraDeviceEvent({
-    required this.device,
-    required this.type,
-  });
+  const UvcCameraDeviceEvent({required this.device, required this.type});
 
   factory UvcCameraDeviceEvent.fromMap(Map<dynamic, dynamic> map) {
     return UvcCameraDeviceEvent(
@@ -22,15 +19,9 @@ class UvcCameraDeviceEvent extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'device': device.toMap(),
-      'type': type.name,
-    };
+    return {'device': device.toMap(), 'type': type.name};
   }
 
   @override
-  List<Object?> get props => [
-        device,
-        type,
-      ];
+  List<Object?> get props => [device, type];
 }

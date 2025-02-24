@@ -8,10 +8,7 @@ class UvcCameraError extends Equatable {
   final UvcCameraErrorType type;
   final String? reason;
 
-  const UvcCameraError({
-    required this.type,
-    this.reason,
-  });
+  const UvcCameraError({required this.type, this.reason});
 
   factory UvcCameraError.fromMap(Map<dynamic, dynamic> map) {
     return UvcCameraError(
@@ -21,13 +18,9 @@ class UvcCameraError extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'type': type.name,
-    };
+    return {'type': type.name};
   }
 
   @override
-  List<Object?> get props => [
-        type,
-      ];
+  List<Object?> get props => [type];
 }

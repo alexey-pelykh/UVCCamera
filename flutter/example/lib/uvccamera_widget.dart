@@ -101,9 +101,7 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
 
           _log = '';
 
-          _cameraController = UvcCameraController(
-            device: widget.device,
-          );
+          _cameraController = UvcCameraController(device: widget.device);
           _cameraControllerInitializeFuture = _cameraController!.initialize().then((_) async {
             _errorEventSubscription = _cameraController!.cameraErrorEvents.listen((event) {
               setState(() {
@@ -249,39 +247,19 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
   @override
   Widget build(BuildContext context) {
     if (!_isDeviceAttached) {
-      return Center(
-        child: Text(
-          'Device is not attached',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return Center(child: Text('Device is not attached', style: TextStyle(fontSize: 18)));
     }
 
     if (!_hasCameraPermission) {
-      return Center(
-        child: Text(
-          'Camera permission is not granted',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return Center(child: Text('Camera permission is not granted', style: TextStyle(fontSize: 18)));
     }
 
     if (!_hasDevicePermission) {
-      return Center(
-        child: Text(
-          'Device permission is not granted',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return Center(child: Text('Device permission is not granted', style: TextStyle(fontSize: 18)));
     }
 
     if (!_isDeviceConnected) {
-      return Center(
-        child: Text(
-          'Device is not connected',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
+      return Center(child: Text('Device is not connected', style: TextStyle(fontSize: 18)));
     }
 
     return FutureBuilder<void>(
@@ -299,11 +277,7 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
                     child: SingleChildScrollView(
                       child: SelectableText(
                         _log,
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontFamily: 'Courier',
-                          fontSize: 10.0,
-                        ),
+                        style: TextStyle(color: Colors.red, fontFamily: 'Courier', fontSize: 10.0),
                       ),
                     ),
                   ),
@@ -321,9 +295,7 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
                         children: [
                           FloatingActionButton(
                             backgroundColor: Colors.white,
-                            onPressed: () async => {
-                              await _takePicture(),
-                            },
+                            onPressed: () async => {await _takePicture()},
                             child: Icon(Icons.camera_alt, color: Colors.black),
                           ),
                           FloatingActionButton(

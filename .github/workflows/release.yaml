@@ -87,6 +87,12 @@ jobs:
           name: lib
           path: lib/build/outputs/aar/*-release.aar
 
+      - name: Flutter plugin dependencies
+        working-directory: flutter
+        run: |
+          flutter pub get \
+          || exit $?
+
       - name: Build Flutter example
         working-directory: flutter/example
         env:
@@ -130,5 +136,10 @@ jobs:
           (cd example \
             && mv README.md example.md \
           )
+
+          dart format \
+            --set-exit-if-changed \
+            . \
+          || exit $?
 
           flutter pub publish --force

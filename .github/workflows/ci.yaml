@@ -41,7 +41,7 @@ jobs:
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v3
         with:
-          version: 3.29.0
+          version: 3.29.1
 
       - name: Cache Gradle packages
         uses: actions/cache@v4

@@ -35,6 +35,11 @@ import java.nio.ByteBuffer;
     private final UvcCameraTakePictureResultHandler resultHandler;
 
     /**
+     * Whether the frame has been captured
+     */
+    private boolean frameCaptured;
+
+    /**
      * Creates a new instance of {@link UvcCameraTakePictureFrameCallback}.
      *
      * @param uvcCameraPlatform the UVC camera platform
@@ -59,6 +64,13 @@ import java.nio.ByteBuffer;
         Log.v(TAG, "onFrame"
                 + ": frame=" + frame
         );
+
+        if (frameCaptured) {
+            Log.w(TAG, "onFrame: frame already captured");
+            return;
+        }
+
+        frameCaptured = true;
 
         uvcCameraPlatform.handleTakenPicture(cameraId, outputFile, frame, resultHandler);
     }

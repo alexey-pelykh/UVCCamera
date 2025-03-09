@@ -179,16 +179,17 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       throw UvcCameraControllerIllegalStateException('UvcCameraController is already recording video');
     }
 
-    final XFile videoRecordingFile = await UvcCameraPlatformInterface.instance.startVideoRecording(
-      _cameraId!,
-      videoRecordingMode,
-    );
-
-    value = value.copyWith(
-      isRecordingVideo: true,
-      videoRecordingMode: videoRecordingMode,
-      videoRecordingFile: videoRecordingFile,
-    );
+    value = value.copyWith(isRecordingVideo: true, videoRecordingMode: videoRecordingMode, videoRecordingFile: null);
+    try {
+      final XFile videoRecordingFile = await UvcCameraPlatformInterface.instance.startVideoRecording(
+        _cameraId!,
+        videoRecordingMode,
+      );
+      value = value.copyWith(videoRecordingFile: videoRecordingFile);
+    } catch (e) {
+      value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
+      rethrow;
+    }
   }
 
   /// Stops video recording.
@@ -199,13 +200,17 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       throw UvcCameraControllerIllegalStateException('UvcCameraController is not recording video');
     }
 
-    await UvcCameraPlatformInterface.instance.stopVideoRecording(_cameraId!);
+    try {
+      await UvcCameraPlatformInterface.instance.stopVideoRecording(_cameraId!);
 
-    final XFile videoRecordingFile = value.videoRecordingFile!;
+      final XFile videoRecordingFile = value.videoRecordingFile!;
 
-    value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
-
-    return videoRecordingFile;
+      return videoRecordingFile;
+    } catch (e) {
+      rethrow;
+    } finally {
+      value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
+    }
   }
 
   /// Returns a widget showing a live camera preview.

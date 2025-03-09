@@ -156,9 +156,19 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   Future<XFile> takePicture() async {
     _ensureInitializedNotDisposed();
 
-    final XFile pictureFile = await UvcCameraPlatformInterface.instance.takePicture(_cameraId!);
+    if (value.isTakingPicture) {
+      throw UvcCameraControllerIllegalStateException('UvcCameraController is already taking a picture');
+    }
 
-    return pictureFile;
+    value = value.copyWith(isTakingPicture: true);
+    try {
+      final XFile pictureFile = await UvcCameraPlatformInterface.instance.takePicture(_cameraId!);
+      return pictureFile;
+    } catch (e) {
+      rethrow;
+    } finally {
+      value = value.copyWith(isTakingPicture: false);
+    }
   }
 
   /// Starts video recording.

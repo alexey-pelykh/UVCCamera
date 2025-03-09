@@ -27,6 +27,9 @@ class UvcCameraControllerState {
   /// Camera video recording file.
   final XFile? videoRecordingFile;
 
+  /// True if the camera is currently taking a picture.
+  final bool isTakingPicture;
+
   /// Creates a new [UvcCameraControllerState] object.
   const UvcCameraControllerState({
     required this.isInitialized,
@@ -35,6 +38,7 @@ class UvcCameraControllerState {
     required this.isRecordingVideo,
     this.videoRecordingMode,
     this.videoRecordingFile,
+    required this.isTakingPicture,
   });
 
   /// Creates a [UvcCameraControllerState] object for an uninitialized controller.
@@ -46,6 +50,7 @@ class UvcCameraControllerState {
         isRecordingVideo: false,
         videoRecordingMode: null,
         videoRecordingFile: null,
+        isTakingPicture: false,
       );
 
   /// Creates a modified copy of this object.
@@ -58,6 +63,7 @@ class UvcCameraControllerState {
     bool? isRecordingVideo,
     UvcCameraMode? videoRecordingMode,
     XFile? videoRecordingFile,
+    bool? isTakingPicture,
   }) {
     return UvcCameraControllerState(
       isInitialized: isInitialized ?? this.isInitialized,
@@ -66,6 +72,7 @@ class UvcCameraControllerState {
       isRecordingVideo: isRecordingVideo ?? this.isRecordingVideo,
       videoRecordingMode: videoRecordingMode ?? this.videoRecordingMode,
       videoRecordingFile: videoRecordingFile ?? this.videoRecordingFile,
+      isTakingPicture: isTakingPicture ?? this.isTakingPicture,
     );
   }
 
@@ -77,7 +84,8 @@ class UvcCameraControllerState {
         'previewMode: $previewMode, '
         'isRecordingVideo: $isRecordingVideo, '
         'videoRecordingMode: $videoRecordingMode, '
-        'videoRecordingFile: $videoRecordingFile'
+        'videoRecordingFile: $videoRecordingFile, '
+        'isTakingPicture: $isTakingPicture'
         ')';
   }
 }

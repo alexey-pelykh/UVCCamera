@@ -295,7 +295,12 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
                         children: [
                           FloatingActionButton(
                             backgroundColor: Colors.white,
-                            onPressed: () async => {await _takePicture()},
+                            onPressed:
+                                value.isTakingPicture
+                                    ? null
+                                    : () async {
+                                      await _takePicture();
+                                    },
                             child: Icon(Icons.camera_alt, color: Colors.black),
                           ),
                           FloatingActionButton(

@@ -36,7 +36,7 @@ jobs:
       - name: Setup Flutter SDK
         uses: flutter-actions/setup-flutter@v3
         with:
-          version: 3.29.1
+          version: 3.29.2
 
       - name: Setup pub.dev credentials
         uses: flutter-actions/setup-pubdev-credentials@v1

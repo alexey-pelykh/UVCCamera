@@ -1,5 +1,5 @@
 plugins {
-    id("com.android.library") version "8.7.3" apply false
+    id("com.android.library") version "8.9.1" apply false
 }
 
 // TODO: this is custom environment variable that needs to be set in the system

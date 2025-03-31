@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.3"
+agp = "8.9.1"
 junit = "4.13.2"
 supportTestRunner = "1.0.2"
 supportEspressoCore = "3.0.2"

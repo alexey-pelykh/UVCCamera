@@ -272,7 +272,7 @@ public class UVCCamera {
 		final List<Size> list = getSupportedSizeList();
 		for (final Size sz: list) {
 			if ((sz.width == mCurrentWidth)
-				|| (sz.height == mCurrentHeight)) {
+				&& (sz.height == mCurrentHeight)) {
 				result =sz;
 				break;
 			}

@@ -11,3 +11,7 @@ brought to you by [Alexey Pelykh](https://alexey-pelykh.com).
 
 The plugin's API is intentionally kept similar to the [camera](https://pub.dev/packages/camera) package. See the
 [example](https://pub.dev/packages/uvccamera/example) for an app that uses the plugin.
+
+
+## Note
+There are problems with the stability of the Impeller on version Flutter 3.27.\*, so we recommend using version Flutter 3.29.\*

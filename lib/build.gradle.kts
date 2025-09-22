@@ -8,10 +8,11 @@ version = findProperty("uvccamera.version") as String? ?: "0.0.0-SNAPSHOT"
 
 android {
     namespace = "org.uvccamera.lib"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21
+        targetSdk = 35  // Android 15 for 16 KB page size compliance
 
         testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

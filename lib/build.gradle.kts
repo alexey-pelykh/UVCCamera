@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
     id("maven-publish")
-    id("signing")
 }
 
 version = findProperty("uvccamera.version") as String? ?: "0.0.0-SNAPSHOT"
@@ -98,35 +97,8 @@ publishing {
 
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/" + System.getenv("GITHUB_REPOSITORY"))
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
+            name = "StagingDeploy"
+            url = uri(layout.buildDirectory.dir("staging-deploy"))
         }
-
-        maven {
-            name = "OSSRH"
-            url = uri(
-                if (project.version.toString().endsWith("-SNAPSHOT"))
-                    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                else
-                    "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            )
-            credentials {
-                username = System.getenv("OSSRH_USERNAME")
-                password = System.getenv("OSSRH_TOKEN")
-            }
-        }
-    }
-}
-
-val gpgPassphrase: String? = System.getenv("GPG_PASSPHRASE")
-val gpgPrivateKey: String? = System.getenv("GPG_PRIVATE_KEY")
-if (gpgPassphrase != null && gpgPrivateKey != null) {
-    signing {
-        useInMemoryPgpKeys(gpgPrivateKey, gpgPassphrase)
-        sign(publishing.publications["release"])
     }
 }

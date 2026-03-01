@@ -8,8 +8,8 @@ platforms:
   android:
 
 environment:
-  sdk: ^3.7.0
-  flutter: ">=3.29.2"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
 
 dependencies:
   flutter:

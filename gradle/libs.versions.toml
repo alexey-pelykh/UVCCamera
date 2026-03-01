@@ -1,5 +1,6 @@
 [versions]
 agp = "8.9.1"
+jreleaser = "1.22.0"
 junit = "4.13.2"
 supportTestRunner = "1.0.2"
 supportEspressoCore = "3.0.2"
@@ -32,3 +33,4 @@ swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefre
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-application = { id = "com.android.application", version.ref = "agp" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }

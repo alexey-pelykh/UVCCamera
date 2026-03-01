@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.jreleaser)
 }
 
+version = findProperty("uvccamera.version") as String? ?: "0.0.0-SNAPSHOT"
+
 jreleaser {
     configFile = file("jreleaser.yml")
 }

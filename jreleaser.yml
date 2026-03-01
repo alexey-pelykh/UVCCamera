@@ -7,9 +7,10 @@ project:
   license: Apache-2.0
   links:
     homepage: https://uvccamera.org
-  java:
-    groupId: org.uvccamera
-    version: 17
+  languages:
+    java:
+      groupId: org.uvccamera
+      version: 17
   versionPattern: CUSTOM
 
 release:
@@ -18,7 +19,8 @@ release:
 
 signing:
   active: ALWAYS
-  armored: true
+  pgp:
+    armored: true
 
 deploy:
   maven:

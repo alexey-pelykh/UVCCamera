@@ -48,6 +48,9 @@ LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib -ldl
 LOCAL_LDLIBS += -llog
 LOCAL_LDLIBS += -landroid
 
+# 16 KB page size support for Google Play compliance (Nov 2025)
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+
 LOCAL_SHARED_LIBRARIES += usb100 uvc
 
 LOCAL_ARM_MODE := arm

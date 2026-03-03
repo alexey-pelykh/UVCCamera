@@ -261,6 +261,9 @@ LOCAL_DISABLE_FATAL_LINKER_WARNINGS := true
 
 LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib -ldl	# to avoid NDK issue(no need for static library)
 
+# 16 KB page size support for Google Play compliance (Nov 2025)
+LOCAL_LDFLAGS += -Wl,-z,max-page-size=16384
+
 LOCAL_WHOLE_STATIC_LIBRARIES = jpeg-turbo1500_static
 
 LOCAL_MODULE := jpeg-turbo1500

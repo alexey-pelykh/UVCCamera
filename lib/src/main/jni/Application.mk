@@ -30,3 +30,7 @@ APP_PLATFORM := android-21
 APP_ABI := armeabi-v7a arm64-v8a
 #APP_OPTIM := debug
 APP_OPTIM := release
+
+# 16 KB page size alignment for Android 15+ compatibility
+# See: https://developer.android.com/guide/practices/page-sizes
+APP_LDFLAGS := -Wl,-z,max-page-size=16384

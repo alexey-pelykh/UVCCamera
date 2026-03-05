@@ -42,9 +42,12 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   /// Stream of camera button events.
   Stream<UvcCameraButtonEvent>? _cameraButtonEventStream;
 
+  /// Subscription to the continuous image stream.
+  StreamSubscription<Map<dynamic, dynamic>>? _imageStreamSubscription;
+
   /// Creates a new [UvcCameraController] object.
   UvcCameraController({required this.device, this.resolutionPreset = UvcCameraResolutionPreset.max})
-    : super(UvcCameraControllerState.uninitialized(device));
+      : super(UvcCameraControllerState.uninitialized(device));
 
   /// Initializes the controller on the device.
   Future<void> initialize() => _initialize(device);
@@ -114,6 +117,9 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       _cameraErrorEventStream = null;
     }
 
+    if (_imageStreamSubscription != null) {
+      await stopImageStream();
+    }
     _textureId = null;
 
     if (_cameraId != null) {
@@ -210,6 +216,45 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       rethrow;
     } finally {
       value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
+    }
+  }
+
+  /// Starts the continuous image stream.
+  ///
+  /// The [onAvailable] callback will be invoked for every frame captured
+  /// by the camera. Each frame is a [Map] containing:
+  /// - 'bytes': Raw NV21 pixel data (Uint8List)
+  /// - 'width': Frame width (int)
+  /// - 'height': Frame height (int)
+  /// - 'format': Pixel format constant (int)
+  Future<void> startImageStream(void Function(Map<dynamic, dynamic> image) onAvailable) async {
+    _ensureInitializedNotDisposed();
+    // Prevent duplicate subscriptions
+    if (_imageStreamSubscription != null) {
+      throw UvcCameraControllerIllegalStateException('Image stream is already running');
+    }
+    // Request the stream pipe from the platform layer
+    final stream = await UvcCameraPlatformInterface.instance.startImageStream(_cameraId!);
+
+    // Subscribe and forward each frame event to the caller's callback
+    _imageStreamSubscription = stream.listen((event) {
+      onAvailable(event);
+    });
+  }
+
+  /// Stops the continuous image stream.
+  Future<void> stopImageStream() async {
+    // Silently return if already stopped (safe to call multiple times)
+    if (_imageStreamSubscription == null) {
+      return;
+    }
+    // Cancel the Dart-side subscription first
+    await _imageStreamSubscription?.cancel();
+    _imageStreamSubscription = null;
+
+    // Then notify the native side to release the frame callback
+    if (_cameraId != null) {
+      await UvcCameraPlatformInterface.instance.stopImageStream(_cameraId!);
     }
   }
 

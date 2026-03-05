@@ -482,6 +482,52 @@ import io.flutter.plugin.common.MethodChannel;
 
                 result.success(null);
             }
+            case "startImageStream": {
+                // Retrieve the camera ID requested by the Dart side
+                final var cameraId = (int) call.argument("cameraId");
+                Log.d(TAG, "MethodCall: startImageStream cameraId=" + cameraId);
+                try {
+                    // [IMPORTANT] Establish an EventChannel to stream real-time frames.
+                    // Channel naming convention: "uvccamera/camera@{cameraId}/image_stream"
+                    final EventChannel imageStreamChannel = new EventChannel(
+                            binaryMessenger,
+                            "uvccamera/camera@" + cameraId + "/image_stream"
+                    );
+                    // A StreamHandler acts as the bridge. Native code starts listening to
+                    // the camera only when the Dart side actively subscribes to this channel.
+                    imageStreamChannel.setStreamHandler(new EventChannel.StreamHandler() {
+                        @Override
+                        public void onListen(Object arguments, EventChannel.EventSink events) {
+                            Log.d(TAG, "ImageStreamChannel: onListen! Dart side subscribed.");
+                            // The pipe (events) is ready. Flick the switch on the 1st floor!
+                            platform.startImageStream(cameraId, events);
+                        }
+                        @Override
+                        public void onCancel(Object arguments) {
+                            Log.d(TAG, "ImageStreamChannel: onCancel! Dart side unsubscribed.");
+                            // No one is listening anymore, shut down the switch.
+                            platform.stopImageStream(cameraId);
+                        }
+                    });
+                    // Acknowledge the Dart side that the channel is readied.
+                    result.success(null);
+                } catch (final Exception e) {
+                    Log.e(TAG, "Failed to initialize image stream channel", e);
+                    result.error("STREAM_ERROR", e.getMessage(), null);
+                }
+                break;
+            }
+
+            case "stopImageStream": {
+                // Handles explicit stop requests from the Dart side
+                // (independent of EventChannel's onCancel).
+                final var cameraId = (int) call.argument("cameraId");
+                Log.d(TAG, "MethodCall: stopImageStream cameraId=" + cameraId);
+                platform.stopImageStream(cameraId);
+                result.success(null);
+                break;
+            }
+
             default -> result.notImplemented();
         }
     }

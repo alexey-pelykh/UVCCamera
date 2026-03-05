@@ -91,6 +91,20 @@ abstract class UvcCameraPlatformInterface extends PlatformInterface {
     throw UnimplementedError('startVideoRecording() has not been implemented.');
   }
 
+  /// Starts the continuous image stream for the specified camera.
+  ///
+  /// Returns a [Stream] of NV21 frame data wrapped in a [Map].
+  /// The map contains 'bytes' (Uint8List), 'width' (int), 'height' (int),
+  /// and 'format' (int).
+  Future<Stream<Map<dynamic, dynamic>>> startImageStream(int cameraId) {
+    throw UnimplementedError('startImageStream() has not been implemented.');
+  }
+
+  /// Stops the continuous image stream for the specified camera.
+  Future<void> stopImageStream(int cameraId) {
+    throw UnimplementedError('stopImageStream() has not been implemented.');
+  }
+
   Future<void> stopVideoRecording(int cameraId) {
     throw UnimplementedError('stopVideoRecording() has not been implemented.');
   }

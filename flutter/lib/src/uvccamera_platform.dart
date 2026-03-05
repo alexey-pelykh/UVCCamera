@@ -25,6 +25,10 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
   final Map<int, EventChannel> _buttonEventChannels = {};
   final Map<int, Stream<UvcCameraButtonEvent>> _buttonEventStreams = {};
 
+  // --- [New] Cache for image stream EventChannels and Streams
+  final Map<int, EventChannel> _imageStreamEventChannels = {};
+  final Map<int, Stream<Map<dynamic, dynamic>>> _imageStreamStreams = {};
+
   @override
   Future<bool> isSupported() async {
     final result = await _nativeMethodChannel.invokeMethod<bool>('isSupported');
@@ -215,6 +219,33 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
   @override
   Future<void> stopVideoRecording(int cameraId) async {
     await _nativeMethodChannel.invokeMethod<void>('stopVideoRecording', {'cameraId': cameraId});
+  }
+
+  @override
+  Future<Stream<Map<dynamic, dynamic>>> startImageStream(int cameraId) async {
+    // 1. Invoke native method to prepare the camera and FrameCallback
+    await _nativeMethodChannel.invokeMethod<void>('startImageStream', {'cameraId': cameraId});
+    // 2. Establish the EventChannel using the agreed naming convention
+    final imageStreamEventChannel = EventChannel('uvccamera/camera@$cameraId/image_stream');
+
+    // 3. Receive the broadcast stream and cast the events to the expected Map format
+    final imageStreamStream = imageStreamEventChannel.receiveBroadcastStream().map((event) {
+      return event as Map<dynamic, dynamic>;
+    });
+    // 4. Cache the channel and stream for later cleanup
+    _imageStreamEventChannels[cameraId] = imageStreamEventChannel;
+    _imageStreamStreams[cameraId] = imageStreamStream;
+    // 5. Return the stream pipe directly to the controller
+    return imageStreamStream;
+  }
+
+  @override
+  Future<void> stopImageStream(int cameraId) async {
+    // 1. Instruct the native side to stop the image stream
+    await _nativeMethodChannel.invokeMethod<void>('stopImageStream', {'cameraId': cameraId});
+    // 2. Clear cached references
+    _imageStreamEventChannels.remove(cameraId);
+    _imageStreamStreams.remove(cameraId);
   }
 
   @override

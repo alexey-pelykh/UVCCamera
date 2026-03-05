@@ -894,6 +894,62 @@ import io.flutter.view.TextureRegistry;
     }
 
     /**
+     * Starts the continuous image stream for the specified camera.
+     * Registers our custom frame callback to receive NV21 frames.
+     *
+     * @param cameraId The camera ID
+     * @param sink the event sink to push frame data to Flutter
+    */
+
+public void startImageStream(final int cameraId, final EventChannel.EventSink sink) {
+        Log.v(TAG, "startImageStream: cameraId=" + cameraId);
+        // Find the requested camera from our active resources map
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+        final var camera = cameraResources.camera();
+        // Retrieve current preview size to calculate the buffer size
+        final var size = camera.getPreviewSize();
+        if (size == null) {
+            throw new IllegalStateException("Camera preview size is not set");
+        }
+        try {
+            // Bind our custom stream callback to the camera hardware event loop,
+            // explicitly requesting PIXEL_FORMAT_NV21 for immediate ML analysis.
+            camera.setFrameCallback(
+                new UvcCameraImageStreamFrameCallback(sink, size.width, size.height),
+                UVCCamera.PIXEL_FORMAT_NV21
+            );
+            Log.d(TAG, "startImageStream: frame callback set successfully");
+        } catch (final Exception e) {
+            Log.e(TAG, "startImageStream: failed to set frame callback", e);
+            sink.error("CAMERA_ERROR", "Failed to start image stream: " + e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Stops the continuous image stream for the specified camera.
+     * @param cameraId The camera ID
+     */
+    public void stopImageStream(final int cameraId) {
+        Log.v(TAG, "stopImageStream: cameraId=" + cameraId);
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            return; // Already closed or doesn't exist, safe to ignore
+        }
+        try {
+            // Unregister the frame callback by passing null
+            cameraResources.camera().setFrameCallback(null, 0);
+            Log.d(TAG, "stopImageStream: frame callback unset successfully");
+        } catch (final Exception e) {
+            Log.e(TAG, "stopImageStream: failed to unset frame callback", e);
+        }
+    }
+
+
+
+    /**
      * Gets the preview size for the specified camera
      *
      * @param cameraId the camera ID

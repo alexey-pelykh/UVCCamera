@@ -5,6 +5,7 @@ import 'uvccamera_button_event.dart';
 import 'uvccamera_device.dart';
 import 'uvccamera_device_event.dart';
 import 'uvccamera_error_event.dart';
+import 'uvccamera_frame_event.dart';
 import 'uvccamera_mode.dart';
 import 'uvccamera_platform_interface.dart';
 import 'uvccamera_resolution_preset.dart';
@@ -24,6 +25,9 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
   final Map<int, EventChannel> _buttonEventChannels = {};
   final Map<int, Stream<UvcCameraButtonEvent>> _buttonEventStreams = {};
+
+  final Map<int, EventChannel> _frameEventChannels = {};
+  final Map<int, Stream<UvcCameraFrameEvent>> _frameEventStreams = {};
 
   @override
   Future<bool> isSupported() async {
@@ -77,6 +81,9 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
     _buttonEventChannels.remove(cameraId);
     _buttonEventStreams.remove(cameraId);
+
+    _frameEventChannels.remove(cameraId);
+    _frameEventStreams.remove(cameraId);
 
     await _nativeMethodChannel.invokeMethod<void>('closeCamera', {'cameraId': cameraId});
   }
@@ -157,6 +164,30 @@ class UvcCameraPlatform extends UvcCameraPlatformInterface {
 
     _buttonEventChannels.remove(cameraId);
     _buttonEventStreams.remove(cameraId);
+  }
+
+  @override
+  Future<Stream<UvcCameraFrameEvent>> attachToCameraFrameCallback(int cameraId) async {
+    final frameEventChannel = EventChannel('uvccamera/frame_events_$cameraId');
+    final frameEventStream = frameEventChannel.receiveBroadcastStream().map((event) {
+      return UvcCameraFrameEvent.fromMap(Map<String, dynamic>.from(event));
+    });
+
+    // Call native method to start frame streaming
+    await _nativeMethodChannel.invokeMethod<void>('attachToCameraFrameCallback', {'cameraId': cameraId});
+
+    _frameEventChannels[cameraId] = frameEventChannel;
+    _frameEventStreams[cameraId] = frameEventStream;
+
+    return frameEventStream;
+  }
+
+  @override
+  Future<void> detachFromCameraFrameCallback(int cameraId) async {
+    await _nativeMethodChannel.invokeMethod<void>('detachFromCameraFrameCallback', {'cameraId': cameraId});
+
+    _frameEventChannels.remove(cameraId);
+    _frameEventStreams.remove(cameraId);
   }
 
   @override

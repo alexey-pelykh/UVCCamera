@@ -295,6 +295,38 @@ import io.flutter.plugin.common.MethodChannel;
 
                 result.success(null);
             }
+            case "attachToCameraFrameCallback" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.attachToCameraFrameCallback(cameraId);
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(null);
+            }
+            case "detachFromCameraFrameCallback" -> {
+                final var cameraId = call.<Integer>argument("cameraId");
+                if (cameraId == null) {
+                    result.error("InvalidArgument", "cameraId is required", null);
+                    return;
+                }
+
+                try {
+                    uvcCameraPlatform.detachFromCameraFrameCallback(cameraId);
+                } catch (final Exception e) {
+                    result.error(e.getClass().getSimpleName(), e.getMessage(), null);
+                    return;
+                }
+
+                result.success(null);
+            }
             case "getSupportedModes" -> {
                 final var cameraId = call.<Integer>argument("cameraId");
                 if (cameraId == null) {

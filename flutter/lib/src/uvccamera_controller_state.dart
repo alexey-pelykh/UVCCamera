@@ -30,6 +30,9 @@ class UvcCameraControllerState {
   /// True if the camera is currently taking a picture.
   final bool isTakingPicture;
 
+  /// True if the camera is currently streaming images.
+  final bool isStreamingImages;
+
   /// Creates a new [UvcCameraControllerState] object.
   const UvcCameraControllerState({
     required this.isInitialized,
@@ -39,6 +42,7 @@ class UvcCameraControllerState {
     this.videoRecordingMode,
     this.videoRecordingFile,
     required this.isTakingPicture,
+    required this.isStreamingImages,
   });
 
   /// Creates a [UvcCameraControllerState] object for an uninitialized controller.
@@ -51,6 +55,7 @@ class UvcCameraControllerState {
         videoRecordingMode: null,
         videoRecordingFile: null,
         isTakingPicture: false,
+        isStreamingImages: false,
       );
 
   /// Creates a modified copy of this object.
@@ -64,6 +69,7 @@ class UvcCameraControllerState {
     UvcCameraMode? videoRecordingMode,
     XFile? videoRecordingFile,
     bool? isTakingPicture,
+    bool? isStreamingImages,
   }) {
     return UvcCameraControllerState(
       isInitialized: isInitialized ?? this.isInitialized,
@@ -73,6 +79,7 @@ class UvcCameraControllerState {
       videoRecordingMode: videoRecordingMode ?? this.videoRecordingMode,
       videoRecordingFile: videoRecordingFile ?? this.videoRecordingFile,
       isTakingPicture: isTakingPicture ?? this.isTakingPicture,
+      isStreamingImages: isStreamingImages ?? this.isStreamingImages,
     );
   }
 

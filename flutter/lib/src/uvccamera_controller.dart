@@ -11,6 +11,7 @@ import 'uvccamera_controller_not_initialized_exception.dart';
 import 'uvccamera_controller_state.dart';
 import 'uvccamera_device.dart';
 import 'uvccamera_error_event.dart';
+import 'uvccamera_frame_event.dart';
 import 'uvccamera_mode.dart';
 import 'uvccamera_platform_interface.dart';
 import 'uvccamera_resolution_preset.dart';
@@ -42,6 +43,15 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   /// Stream of camera button events.
   Stream<UvcCameraButtonEvent>? _cameraButtonEventStream;
 
+  /// Stream of camera frame events.
+  Stream<UvcCameraFrameEvent>? _cameraFrameEventStream;
+
+  /// Frame event subscription for image streaming.
+  StreamSubscription<UvcCameraFrameEvent>? _frameEventSubscription;
+
+  /// Callback function for image streaming.
+  void Function(UvcCameraFrameEvent)? _onImageAvailable;
+
   /// Creates a new [UvcCameraController] object.
   UvcCameraController({required this.device, this.resolutionPreset = UvcCameraResolutionPreset.max})
     : super(UvcCameraControllerState.uninitialized(device));
@@ -70,6 +80,7 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       _cameraErrorEventStream = await UvcCameraPlatformInterface.instance.attachToCameraErrorCallback(_cameraId!);
       _cameraStatusEventStream = await UvcCameraPlatformInterface.instance.attachToCameraStatusCallback(_cameraId!);
       _cameraButtonEventStream = await UvcCameraPlatformInterface.instance.attachToCameraButtonCallback(_cameraId!);
+      _cameraFrameEventStream = await UvcCameraPlatformInterface.instance.attachToCameraFrameCallback(_cameraId!);
 
       value = value.copyWith(isInitialized: true, device: device, previewMode: previewMode);
 
@@ -98,6 +109,18 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
         await UvcCameraPlatformInterface.instance.detachFromCameraButtonCallback(_cameraId!);
       }
       _cameraButtonEventStream = null;
+    }
+
+    // Clean up image streaming if active
+    if (_frameEventSubscription != null) {
+      await _frameEventSubscription!.cancel();
+      _frameEventSubscription = null;
+      _onImageAvailable = null;
+    }
+
+    if (_cameraFrameEventStream != null) {
+      await UvcCameraPlatformInterface.instance.detachFromCameraFrameCallback(_cameraId!);
+      _cameraFrameEventStream = null;
     }
 
     if (_cameraStatusEventStream != null) {
@@ -150,6 +173,12 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
   Stream<UvcCameraButtonEvent> get cameraButtonEvents {
     _ensureInitializedNotDisposed();
     return _cameraButtonEventStream!;
+  }
+
+  /// Returns a stream of camera frame events containing real-time image data.
+  Stream<UvcCameraFrameEvent> get cameraFrameEvents {
+    _ensureInitializedNotDisposed();
+    return _cameraFrameEventStream!;
   }
 
   /// Takes a picture.
@@ -210,6 +239,73 @@ class UvcCameraController extends ValueNotifier<UvcCameraControllerState> {
       rethrow;
     } finally {
       value = value.copyWith(isRecordingVideo: false, videoRecordingMode: null, videoRecordingFile: null);
+    }
+  }
+
+  /// Starts streaming raw image data from the camera.
+  ///
+  /// The provided [onImageAvailable] callback will be called for each frame
+  /// captured by the camera. The callback receives a [UvcCameraFrameEvent]
+  /// containing the raw image data and metadata.
+  ///
+  /// Throws [UvcCameraControllerIllegalStateException] if the controller is
+  /// already streaming images.
+  Future<void> startImageStream(void Function(UvcCameraFrameEvent) onImageAvailable) async {
+    _ensureInitializedNotDisposed();
+
+    if (value.isStreamingImages) {
+      throw UvcCameraControllerIllegalStateException('UvcCameraController is already streaming images');
+    }
+
+    try {
+      // Store the callback
+      _onImageAvailable = onImageAvailable;
+      
+      // Start native frame streaming
+      await UvcCameraPlatformInterface.instance.attachToCameraFrameCallback(_cameraId!);
+      
+      // Subscribe to frame events and call the callback
+      _frameEventSubscription = cameraFrameEvents.listen((frameEvent) {
+        _onImageAvailable?.call(frameEvent);
+      });
+      
+      // Update state
+      value = value.copyWith(isStreamingImages: true);
+    } catch (e) {
+      // Clean up on error
+      _onImageAvailable = null;
+      await _frameEventSubscription?.cancel();
+      _frameEventSubscription = null;
+      rethrow;
+    }
+  }
+
+  /// Stops streaming raw image data from the camera.
+  ///
+  /// Throws [UvcCameraControllerIllegalStateException] if the controller is
+  /// not streaming images.
+  Future<void> stopImageStream() async {
+    _ensureInitializedNotDisposed();
+
+    if (!value.isStreamingImages) {
+      throw UvcCameraControllerIllegalStateException('UvcCameraController is not streaming images');
+    }
+
+    try {
+      // Stop native frame streaming
+      await UvcCameraPlatformInterface.instance.detachFromCameraFrameCallback(_cameraId!);
+      
+      // Cancel subscription
+      await _frameEventSubscription?.cancel();
+      _frameEventSubscription = null;
+      
+      // Clear callback
+      _onImageAvailable = null;
+    } catch (e) {
+      rethrow;
+    } finally {
+      // Update state
+      value = value.copyWith(isStreamingImages: false);
     }
   }
 

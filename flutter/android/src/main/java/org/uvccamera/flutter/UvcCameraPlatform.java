@@ -508,6 +508,15 @@ import io.flutter.view.TextureRegistry;
         final var buttonEventStreamHandler = new UvcCameraButtonEventStreamHandler();
         buttonEventChannel.setStreamHandler(buttonEventStreamHandler);
 
+        // Create the frame event channel
+        final var frameEventChannel = new EventChannel(
+                binaryMessenger,
+                "uvccamera/frame_events_" + cameraId
+        );
+        final var frameEventStreamHandler = new UvcCameraFrameEventStreamHandler();
+        frameEventChannel.setStreamHandler(frameEventStreamHandler);
+        final var frameCallback = new UvcCameraFrameCallback(frameEventStreamHandler);
+
         final var mediaRecorder = new MediaRecorder();
 
         camerasResources.put(cameraId, new UvcCameraResources(
@@ -524,6 +533,9 @@ import io.flutter.view.TextureRegistry;
                 buttonEventChannel,
                 buttonEventStreamHandler,
                 buttonCallback,
+                frameEventChannel,
+                frameEventStreamHandler,
+                frameCallback,
                 mediaRecorder
         ));
 
@@ -546,6 +558,7 @@ import io.flutter.view.TextureRegistry;
         cameraResources.buttonEventChannel().setStreamHandler(null);
         cameraResources.statusEventChannel().setStreamHandler(null);
         cameraResources.errorEventChannel().setStreamHandler(null);
+        cameraResources.frameEventChannel().setStreamHandler(null);
 
         Log.d(TAG, "closeCamera: releasing media recorder");
         try {
@@ -874,6 +887,40 @@ import io.flutter.view.TextureRegistry;
         }
 
         cameraResources.buttonCallback().disableEventsCasting();
+    }
+
+    /**
+     * Attaches to the camera frame callback
+     *
+     * @param cameraId the camera ID
+     */
+    public void attachToCameraFrameCallback(final int cameraId) {
+        Log.v(TAG, "attachToCameraFrameCallback: cameraId=" + cameraId);
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        // Set frame callback to start receiving frames
+        cameraResources.camera().setFrameCallback(cameraResources.frameCallback(), UVCCamera.PIXEL_FORMAT_YUV420SP);
+    }
+
+    /**
+     * Detaches from the camera frame callback
+     *
+     * @param cameraId the camera ID
+     */
+    public void detachFromCameraFrameCallback(final int cameraId) {
+        Log.v(TAG, "detachFromCameraFrameCallback: cameraId=" + cameraId);
+
+        final var cameraResources = camerasResources.get(cameraId);
+        if (cameraResources == null) {
+            throw new IllegalArgumentException("Camera resources not found: " + cameraId);
+        }
+
+        // Remove frame callback to stop receiving frames
+        cameraResources.camera().setFrameCallback(null, UVCCamera.PIXEL_FORMAT_YUV420SP);
     }
 
     /**

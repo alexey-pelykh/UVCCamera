@@ -25,6 +25,9 @@ import io.flutter.view.TextureRegistry;
         EventChannel buttonEventChannel,
         UvcCameraButtonEventStreamHandler buttonEventStreamHandler,
         UvcCameraButtonCallback buttonCallback,
+        EventChannel frameEventChannel,
+        UvcCameraFrameEventStreamHandler frameEventStreamHandler,
+        UvcCameraFrameCallback frameCallback,
         MediaRecorder mediaRecorder
 ) {
 }

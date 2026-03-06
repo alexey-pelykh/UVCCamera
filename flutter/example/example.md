@@ -1,5 +1,177 @@
+# [UVCCamera](https://uvccamera.org) Example
+
+The example demonstrates how to use the [UVCCamera](https://uvccamera.org) plugin in a Flutter app.
+
+## [pubspec.yaml](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/pubspec.yaml)
+```yaml
+name: uvccamera_example
+description: "Demonstrates how to use the uvccamera plugin."
+publish_to: none
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  uvccamera: 0.0.13
+  cross_file: ^0.3.4+2
+  cupertino_icons: ^1.0.8
+  permission_handler: ^11.3.1
+
+dev_dependencies:
+  integration_test:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+```
+
+## [lib/main.dart](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/lib/main.dart)
+```dart
+import 'package:flutter/material.dart';
+
+import 'uvccamera_demo_app.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(const UvcCameraDemoApp());
+}
+```
+
+## [lib/uvccamera_demo_app.dart](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/lib/uvccamera_demo_app.dart)
+```dart
+import 'package:flutter/material.dart';
+
+import 'uvccamera_devices_screen.dart';
+
+class UvcCameraDemoApp extends StatefulWidget {
+  const UvcCameraDemoApp({super.key});
+
+  @override
+  State<UvcCameraDemoApp> createState() => _UvcCameraDemoAppState();
+}
+
+class _UvcCameraDemoAppState extends State<UvcCameraDemoApp> {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'UVC Camera Example',
+      home: Scaffold(appBar: AppBar(title: const Text('UVC Camera Example')), body: UvcCameraDevicesScreen()),
+    );
+  }
+}
+```
+
+## [lib/uvccamera_device_screen.dart](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/lib/uvccamera_device_screen.dart)
+```dart
+import 'package:flutter/material.dart';
+import 'package:uvccamera/uvccamera.dart';
+
+import 'uvccamera_widget.dart';
+
+class UvcCameraDeviceScreen extends StatelessWidget {
+  final UvcCameraDevice device;
+
+  const UvcCameraDeviceScreen({super.key, required this.device});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: Text(device.name)), body: Center(child: UvcCameraWidget(device: device)));
+  }
+}
+```
+
+## [lib/uvccamera_devices_screen.dart](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/lib/uvccamera_devices_screen.dart)
+```dart
 import 'dart:async';
-import 'dart:developer';
+
+import 'package:flutter/material.dart';
+import 'package:uvccamera/uvccamera.dart';
+
+import 'uvccamera_device_screen.dart';
+
+class UvcCameraDevicesScreen extends StatefulWidget {
+  const UvcCameraDevicesScreen({super.key});
+
+  @override
+  State<UvcCameraDevicesScreen> createState() => _UvcCameraDevicesScreenState();
+}
+
+class _UvcCameraDevicesScreenState extends State<UvcCameraDevicesScreen> {
+  bool _isSupported = false;
+  StreamSubscription<UvcCameraDeviceEvent>? _deviceEventSubscription;
+  final Map<String, UvcCameraDevice> _devices = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    UvcCamera.isSupported().then((value) {
+      setState(() {
+        _isSupported = value;
+      });
+    });
+
+    _deviceEventSubscription = UvcCamera.deviceEventStream.listen((event) {
+      setState(() {
+        if (event.type == UvcCameraDeviceEventType.attached) {
+          _devices[event.device.name] = event.device;
+        } else if (event.type == UvcCameraDeviceEventType.detached) {
+          _devices.remove(event.device.name);
+        }
+      });
+    });
+
+    UvcCamera.getDevices().then((devices) {
+      setState(() {
+        _devices.addAll(devices);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _deviceEventSubscription?.cancel();
+    _deviceEventSubscription = null;
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isSupported) {
+      return const Center(child: Text('UVC Camera is not supported on this device.', style: TextStyle(fontSize: 18)));
+    }
+
+    if (_devices.isEmpty) {
+      return const Center(child: Text('No UVC devices connected.', style: TextStyle(fontSize: 18)));
+    }
+
+    return ListView(
+      children:
+          _devices.values.map((device) {
+            return ListTile(
+              leading: const Icon(Icons.videocam),
+              title: Text(device.name),
+              subtitle: Text('Vendor ID: ${device.vendorId}, Product ID: ${device.productId}'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => UvcCameraDeviceScreen(device: device)));
+              },
+            );
+          }).toList(),
+    );
+  }
+}
+```
+
+## [lib/uvccamera_widget.dart](https://github.com/alexey-pelykh/UVCCamera/blob/main/flutter/example/lib/uvccamera_widget.dart)
+```dart
+import 'dart:async';
 
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +199,6 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
   StreamSubscription<UvcCameraStatusEvent>? _statusEventSubscription;
   StreamSubscription<UvcCameraButtonEvent>? _buttonEventSubscription;
   StreamSubscription<UvcCameraDeviceEvent>? _deviceEventSubscription;
-  StreamSubscription<UvcCameraFrameEvent>? _frameEventSubscription;
   String _log = '';
 
   @override
@@ -127,14 +298,6 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
                 _log = 'btn(${event.button}): ${event.state}\n$_log';
               });
             });
-            log('_cameraController!.cameraFrameEvents');
-
-            // _frameEventSubscription = _cameraController!.cameraFrameEvents.listen((event) {
-            //   log('frame: ${event.imageData.length}');
-            //   setState(() {
-            //     _log = 'frame: ${event.imageData.length}\n$_log';
-            //   });
-            // });
           });
         } else if (event.type == UvcCameraDeviceEventType.disconnected) {
           _hasCameraPermission = false;
@@ -144,9 +307,6 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
 
           _buttonEventSubscription?.cancel();
           _buttonEventSubscription = null;
-
-          _frameEventSubscription?.cancel();
-          _frameEventSubscription = null;
 
           _statusEventSubscription?.cancel();
           _statusEventSubscription = null;
@@ -181,9 +341,6 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
 
     _statusEventSubscription?.cancel();
     _statusEventSubscription = null;
-
-    _frameEventSubscription?.cancel();
-    _frameEventSubscription = null;
 
     _cameraController?.dispose();
     _cameraController = null;
@@ -333,26 +490,6 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
                               color: value.isRecordingVideo ? Colors.white : Colors.black,
                             ),
                           ),
-                          FloatingActionButton(
-                            backgroundColor: Colors.white,
-                            onPressed: () async {
-                              // Start streaming
-                              await _cameraController!.startImageStream((UvcCameraFrameEvent frameEvent) {
-                                log('Frame received: ${frameEvent.imageData.length} bytes');
-                                log('Resolution: ${frameEvent.width}x${frameEvent.height}');
-                                // Process raw image data here
-                              });
-                            },
-                            child: Icon(Icons.play_arrow, color: Colors.black),
-                          ),
-                          FloatingActionButton(
-                            backgroundColor: Colors.white,
-                            onPressed: () async {
-                              // Stop streaming
-                              await _cameraController!.stopImageStream();
-                            },
-                            child: Icon(Icons.stop, color: Colors.black),
-                          ),
                         ],
                       );
                     },
@@ -368,3 +505,4 @@ class _UvcCameraWidgetState extends State<UvcCameraWidget> with WidgetsBindingOb
     );
   }
 }
+```

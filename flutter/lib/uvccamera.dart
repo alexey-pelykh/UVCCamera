@@ -15,6 +15,7 @@ export 'src/uvccamera_error.dart' show UvcCameraError;
 export 'src/uvccamera_error_event.dart' show UvcCameraErrorEvent;
 export 'src/uvccamera_error_type.dart' show UvcCameraErrorType;
 export 'src/uvccamera_exception.dart' show UvcCameraException;
+export 'src/uvccamera_frame_event.dart' show UvcCameraFrameEvent;
 export 'src/uvccamera_frame_format.dart' show UvcCameraFrameFormat;
 export 'src/uvccamera_mode.dart' show UvcCameraMode;
 export 'src/uvccamera_preview.dart' show UvcCameraPreview;

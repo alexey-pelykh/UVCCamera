@@ -114,10 +114,12 @@ static const char *_uvc_name_for_format_subtype(uint8_t subtype) {
 #define FRAME_CAPABILITIES			"capabilities"
 #define	FRAME_WIDTH					WIDTH
 #define	FRAME_HEIGHT				HEIGHT
+#define FRAME_DESC_SUBTYPE			SUBTYPE
 #define FRAME_BITRATE_MIN			"minBitRate"
 #define FRAME_BITRATE_MAX			"maxBitRate"
 #define FRAME_FRAMEBUFFERSIZE_MAX	"maxFrameBufferSize"
 #define FRAME_INTERVAL_DEFAULT		"defaultFrameInterval"
+#define FRAME_INTERVAL_TYPE         "frameIntervalType"
 #define FRAME_FPS_DEFAULT			"defaultFps"
 #define FRAME_INTERVALS				"intervals"
 #define FRAME_INTERVAL_INDEX		INDEX
@@ -364,20 +366,74 @@ char *UVCDiags::getSupportedSize(const uvc_device_handle_t *deviceHandle) {
 					{
 						switch (fmt_desc->bDescriptorSubtype) {
 						case UVC_VS_FORMAT_UNCOMPRESSED:
-						case UVC_VS_FORMAT_MJPEG:
-							write(writer, "index", fmt_desc->bFormatIndex);
-							write(writer, "type", fmt_desc->bDescriptorSubtype);
-							write(writer, "default", fmt_desc->bDefaultFrameIndex);
-							writer.String("size");
-							writer.StartArray();
-							DL_FOREACH(fmt_desc->frame_descs, frame_desc)
-							{
-								snprintf(buf, sizeof(buf), "%dx%d", frame_desc->wWidth, frame_desc->wHeight);
-								buf[sizeof(buf)-1] = '\0';
-								writer.String(buf);
-							}
-							writer.EndArray();
-							break;
+                            case UVC_VS_FORMAT_MJPEG:
+                                write(writer, "index", fmt_desc->bFormatIndex);
+                                write(writer, "type", fmt_desc->bDescriptorSubtype);
+                                write(writer, "default", fmt_desc->bDefaultFrameIndex);
+                                writer.String(FORMAT_FRAMEDESCRIPTORS);
+                                writer.StartArray();
+                                DL_FOREACH(fmt_desc->frame_descs, frame_desc) {
+                                    uint32_t *interval_ptr;
+
+                                    writer.StartObject();
+                                    write(writer, FRAME_WIDTH, frame_desc->wWidth);
+                                    write(writer, FRAME_HEIGHT, frame_desc->wHeight);
+                                    write(writer, FRAME_DESC_SUBTYPE, frame_desc->bDescriptorSubtype);
+                                    write(writer, FRAME_INTERVAL_DEFAULT, frame_desc->dwDefaultFrameInterval);
+                                    write(writer, FRAME_INTERVAL_TYPE, frame_desc->bFrameIntervalType);
+                                    write(writer, FRAME_FPS_DEFAULT, 10000000 / frame_desc->dwDefaultFrameInterval);
+
+                                    if (!frame_desc->bFrameIntervalType) {
+                                        // 最小fps
+                                        writer.String(FRAME_INTERVAL_MIN);
+                                        writer.StartObject();
+                                        {
+                                            write(writer, FRAME_INTERVAL_INDEX, frame_desc->dwMinFrameInterval);
+                                            write(writer, FRAME_INTERVAL_VALUE, frame_desc->dwMinFrameInterval);
+                                            write(writer, FRAME_INTERVAL_FPS,
+                                                  10000000 / frame_desc->dwMinFrameInterval);
+                                        }
+                                        writer.EndObject();
+                                        // 最大fps
+                                        writer.String(FRAME_INTERVAL_MAX);
+                                        writer.StartObject();
+                                        {
+                                            write(writer, FRAME_INTERVAL_INDEX, frame_desc->dwMaxFrameInterval);
+                                            write(writer, FRAME_INTERVAL_VALUE, frame_desc->dwMaxFrameInterval);
+                                            write(writer, FRAME_INTERVAL_FPS,
+                                                  10000000 / frame_desc->dwMaxFrameInterval);
+                                        }
+                                        writer.EndObject();
+                                        if (frame_desc->dwFrameIntervalStep) {
+                                            // fpsステップ
+                                            writer.String(FRAME_INTERVAL_STEP);
+                                            writer.StartObject();
+                                            {
+                                                write(writer, FRAME_INTERVAL_INDEX, frame_desc->dwFrameIntervalStep);
+                                                write(writer, FRAME_INTERVAL_VALUE, frame_desc->dwFrameIntervalStep);
+                                                write(writer, FRAME_INTERVAL_FPS,
+                                                      10000000 / frame_desc->dwFrameIntervalStep);
+                                            }
+                                            writer.EndObject();
+                                        }
+                                    } else {
+                                        writer.String(FRAME_INTERVALS);
+                                        writer.StartArray();
+                                        for (interval_ptr = frame_desc->intervals; *interval_ptr; ++interval_ptr) {
+                                            writer.StartObject();
+                                            write(writer, FRAME_INTERVAL_INDEX,
+                                                  (int) (interval_ptr - frame_desc->intervals));
+                                            write(writer, FRAME_INTERVAL_VALUE, *interval_ptr);
+                                            write(writer, FRAME_INTERVAL_FPS, 10000000 / *interval_ptr);
+                                            writer.EndObject();
+                                        }
+                                        writer.EndArray();
+                                    }
+
+                                    writer.EndObject();
+                                }
+                                writer.EndArray();
+                                break;
 						default:
 							break;
 						}

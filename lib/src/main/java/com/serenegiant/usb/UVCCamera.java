@@ -347,7 +347,7 @@ public class UVCCamera {
 			final int format_nums = formats.length();
 			for (int i = 0; i < format_nums; i++) {
 				final JSONObject format = formats.getJSONObject(i);
-				if(format.has("type") && format.has("size")) {
+				if(format.has("type") && format.has("frameDescriptors")) {
 					final int format_type = format.getInt("type");
 					if ((format_type == type) || (type == -1)) {
 						addSize(format, format_type, 0, result);
@@ -360,18 +360,28 @@ public class UVCCamera {
 		return result;
 	}
 
-	private static final void addSize(final JSONObject format, final int formatType, final int frameType, final List<Size> size_list) throws JSONException {
-		final JSONArray size = format.getJSONArray("size");
-		final int size_nums = size.length();
-		for (int j = 0; j < size_nums; j++) {
-			final String[] sz = size.getString(j).split("x");
-			try {
-				size_list.add(new Size(formatType, frameType, j, Integer.parseInt(sz[0]), Integer.parseInt(sz[1])));
-			} catch (final Exception e) {
-				break;
-			}
-		}
-	}
+    private static final void addSize(final JSONObject format, final int formatType, final int frameType, final List<Size> size_list) throws JSONException {
+        final JSONArray frameDescriptors = format.getJSONArray("frameDescriptors");
+        final int size_nums = frameDescriptors.length();
+        for (int j = 0; j < size_nums; j++) {
+            try {
+                final JSONObject descriptor = frameDescriptors.getJSONObject(j);
+                final int width = descriptor.getInt("width");
+                final int height = descriptor.getInt("height");
+
+                final JSONArray intervalArray = descriptor.getJSONArray("intervals");
+                final int intervalCount = intervalArray.length();
+                final int[] intervals = new int[intervalCount];
+                for (int k = 0; k < intervalCount; k++) {
+                    final JSONObject interval = intervalArray.getJSONObject(k);
+                    intervals[k] = interval.getInt("value");
+                }
+                size_list.add(new Size(formatType, frameType, j, width, height, intervals));
+            } catch (final Exception e) {
+                break;
+            }
+        }
+    }
 
     /**
      * set preview surface with SurfaceHolder</br>

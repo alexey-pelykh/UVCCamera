@@ -23,6 +23,7 @@
 
 package com.serenegiant.usb;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -467,7 +468,7 @@ public final class USBMonitor {
 	 * @return
 	 * @throws SecurityException パーミッションがなければSecurityExceptionを投げる
 	 */
-	public UsbControlBlock openDevice(final UsbDevice device) throws SecurityException {
+	public UsbControlBlock openDevice(final UsbDevice device) throws SecurityException, IOException {
 		if (hasPermission(device)) {
 			UsbControlBlock result = mCtrlBlocks.get(device);
 			if (result == null) {
@@ -577,7 +578,13 @@ public final class USBMonitor {
 				final boolean createNew;
 				ctrlBlock = mCtrlBlocks.get(device);
 				if (ctrlBlock == null) {
-					ctrlBlock = new UsbControlBlock(USBMonitor.this, device);
+					try {
+						ctrlBlock = new UsbControlBlock(USBMonitor.this, device);
+					} catch (final IOException e) {
+						Log.w(TAG, "processConnect:failed to open device", e);
+						processCancel(device);
+						return;
+					}
 					mCtrlBlocks.put(device, ctrlBlock);
 					createNew = true;
 				} else {
@@ -909,15 +916,23 @@ public final class USBMonitor {
 
 		if (device != null) {
 			if (BuildCheck.isLollipop()) {
-				info.manufacturer = device.getManufacturerName();
-				info.product = device.getProductName();
-				info.serial = device.getSerialNumber();
+				try {
+					info.manufacturer = device.getManufacturerName();
+					info.product = device.getProductName();
+					info.serial = device.getSerialNumber();
+				} catch (final SecurityException e) {
+					Log.w(TAG, "updateDeviceInfo:failed to get device info", e);
+				}
 			}
 			if (BuildCheck.isMarshmallow()) {
 				info.usb_version = device.getVersion();
 			}
 			if ((manager != null) && manager.hasPermission(device)) {
 				final UsbDeviceConnection connection = manager.openDevice(device);
+				if (connection == null) {
+					Log.w(TAG, "updateDeviceInfo:openDevice failed, device may have been disconnected");
+					return info;
+				}
 				final byte[] desc = connection.getRawDescriptors();
 
 				if (TextUtils.isEmpty(info.usb_version)) {
@@ -987,11 +1002,15 @@ public final class USBMonitor {
 		 * @param monitor
 		 * @param device
 		 */
-		private UsbControlBlock(final USBMonitor monitor, final UsbDevice device) {
+		private UsbControlBlock(final USBMonitor monitor, final UsbDevice device) throws IOException {
 			if (DEBUG) Log.i(TAG, "UsbControlBlock:constructor");
 			mWeakMonitor = new WeakReference<USBMonitor>(monitor);
 			mWeakDevice = new WeakReference<UsbDevice>(device);
 			mConnection = monitor.mUsbManager.openDevice(device);
+			if (mConnection == null) {
+				throw new IOException("failed to open device " + device.getDeviceName()
+					+ ", device may have been disconnected or restricted");
+			}
 			mInfo = updateDeviceInfo(monitor.mUsbManager, device, null);
 			final String name = device.getDeviceName();
 			final String[] v = !TextUtils.isEmpty(name) ? name.split("/") : null;

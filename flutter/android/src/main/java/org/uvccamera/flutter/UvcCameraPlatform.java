@@ -386,7 +386,12 @@ import io.flutter.view.TextureRegistry;
         }
 
         // NOTE: The device is already connected, this should just retrieve the device control block
-        final var deviceCtrlBlock = usbMonitor.openDevice(device);
+        final USBMonitor.UsbControlBlock deviceCtrlBlock;
+        try {
+            deviceCtrlBlock = usbMonitor.openDevice(device);
+        } catch (final IOException e) {
+            throw new IllegalStateException("Failed to open USB device: " + deviceName, e);
+        }
 
         final var camera = new UVCCamera();
         final var cameraId = deviceCtrlBlock.getConnection().getFileDescriptor();

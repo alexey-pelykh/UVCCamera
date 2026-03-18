@@ -401,13 +401,23 @@ import io.flutter.view.TextureRegistry;
         Log.d(TAG, "openCamera: camera opened");
 
         Log.d(TAG, "openCamera: looking for matching frame size");
+        // NOTE: getSupportedSize() must be called first to populate mSupportedSize from native
+        final String supportedSizeJson = camera.getSupportedSize();
+        Log.d(TAG, "openCamera: supportedSize=" + supportedSizeJson);
         final List<Size> supportedSizes;
         try {
-            supportedSizes = camera.getSupportedSizeList();
+            // Use type=-1 to get all supported sizes regardless of frame format filter
+            supportedSizes = UVCCamera.getSupportedSize(-1, supportedSizeJson);
+            Log.d(TAG, "openCamera: supportedSizes count=" + supportedSizes.size());
         } catch (final Exception e) {
             camera.close();
             camera.destroy();
             throw new IllegalStateException("Failed to get supported sizes", e);
+        }
+        if (supportedSizes.isEmpty()) {
+            camera.close();
+            camera.destroy();
+            throw new IllegalStateException("No supported sizes found for camera");
         }
         final var supportedSizesWithAreaDelta = new ArrayList<Pair<Size, Integer>>(supportedSizes.size());
         for (final var size : supportedSizes) {

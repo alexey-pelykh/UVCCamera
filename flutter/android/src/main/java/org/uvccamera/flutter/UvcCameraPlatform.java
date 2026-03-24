@@ -979,7 +979,7 @@ import io.flutter.view.TextureRegistry;
                         outputFile,
                         resultHandler
                 ),
-                UVCCamera.PIXEL_FORMAT_NV21
+                UVCCamera.PIXEL_FORMAT_YUV420SP
         );
     }
 
